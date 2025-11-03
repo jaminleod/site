@@ -1,0 +1,22 @@
+{
+	"name": "jaminleod",
+	"version": "1.0.0",
+	"description": "jaminleod.com",
+	"main": "index.ts",
+	"scripts": {
+		"dev": "vite",
+		"build": "vite build"
+	},
+	"keywords": [],
+	"author": "Benjamin MacLeod",
+	"license": "MIT",
+	"devDependencies": {
+		"@vitejs/plugin-vue": "^6.0.1",
+		"typescript": "^5.9.3",
+		"vite": "^7.1.12",
+		"vue": "^3.5.22"
+	},
+	"dependencies": {
+		"@jaminleod/theme": "^1.0.0"
+	}
+}
