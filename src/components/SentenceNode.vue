@@ -103,8 +103,10 @@
 		margin-right: 0.225rem;
 	}
 
-	button:hover {
-		text-decoration-style: wavy;
+	@media (hover: hover) and (pointer: fine) {
+		a:hover, button:hover {
+			text-decoration-style: wavy;
+		}
 	}
 </style>
 
