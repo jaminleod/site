@@ -46,6 +46,10 @@
 		width: fit-content;
 	}
 
+	.theme-button {
+		width: fit-content;
+	}
+
 	hr {
 		border: none;
 		border-top: 1px solid var(--jml-color-border);
