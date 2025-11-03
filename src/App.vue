@@ -1,5 +1,5 @@
 <script setup type="ts">
-	import ThemeButton from '../../themes/jaminleod/src/components/ThemeButton.vue'
+	import {ThemeButton} from '@jaminleod/theme'
 	import Header from './components/Header.vue'
 	import Describer from './components/Describer.vue'
 	import BioTree from './data/bio.ts'
