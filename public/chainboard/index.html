@@ -49,7 +49,13 @@
       -webkit-tap-highlight-color: transparent;
     }
     input:focus, textarea:focus { outline: none; }
-    textarea { resize: vertical; min-height: 80px; }
+    
+    /* Removed grabber, auto-scales via JS */
+    textarea { 
+      resize: none; 
+      overflow: hidden; 
+      min-height: 52px; 
+    }
 
     .btn {
       display: inline-block;
@@ -74,11 +80,8 @@
     .btn.primary:hover { opacity: 0.8; }
     .btn.danger { border-color: #c0392b; color: #c0392b; background: transparent; }
     .btn.danger:hover { background: #c0392b; color: #fafafa; }
-    .btn.ghost { border: none; background: none; opacity: 0.5; font-size: 0.8rem; }
-    .btn.ghost:hover { opacity: 1; background: none; }
     .btn:disabled { opacity: 0.35; cursor: not-allowed; pointer-events: none; }
 
-    /* ── Icon buttons (theme, refresh) ─────────────────────── */
     .icon-btn {
       background: none;
       border: none;
@@ -95,7 +98,6 @@
     .icon-btn:hover { opacity: 1; }
     .icon-btn svg { display: block; }
 
-    /* ── Overlay / Modal ──────────────────────────────────── */
     .overlay {
       display: none;
       position: fixed;
@@ -119,16 +121,18 @@
       position: relative;
     }
 
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.25rem;
+    }
     .modal-title {
       font-size: 1.1rem;
       font-weight: 400;
-      margin-bottom: 1.25rem;
+      margin: 0;
     }
-
     .modal-close {
-      position: absolute;
-      top: 0.85rem;
-      right: 0.85rem;
       background: none;
       border: none;
       color: var(--fg);
@@ -147,13 +151,18 @@
 
     header {
       display: flex;
-      align-items: baseline;
+      align-items: center;
       justify-content: space-between;
       flex-wrap: wrap;
       gap: 0.5rem;
       border-bottom: 1px solid var(--border);
       padding-bottom: 1rem;
-      margin-bottom: 2rem;
+      margin-bottom: 1rem;
+    }
+    .header-title-wrap {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
     }
     header h1 {
       font-size: 1.6rem;
@@ -182,24 +191,22 @@
     }
     .btn-row { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.75rem; }
 
-    /* ── New Post floating button ─────────────────────────── */
-    #new-post-btn {
-      font-family: var(--font);
-      font-weight: 200;
-      font-size: 0.9rem;
+    /* ── Inline Compose Area ──────────────────────────────── */
+    #inline-compose {
+      margin-bottom: 1.5rem;
+      padding-bottom: 1.5rem;
+      border-bottom: 1px solid var(--border);
     }
-
-    /* ── Post compose overlay ─────────────────────────────── */
-    #compose-overlay .modal {
-      max-width: 480px;
-    }
-
-    /* ── Feed header ──────────────────────────────────────── */
-    .feed-header {
-      display: flex;
-      justify-content: space-between;
+    #inline-compose .btn-row {
+      justify-content: flex-end;
       align-items: center;
-      margin-bottom: 0;
+      margin-top: 0.5rem;
+    }
+    #gas-estimate {
+      font-family: var(--mono);
+      font-size: 0.68rem;
+      opacity: 0.4;
+      margin-right: auto;
     }
 
     /* ── Posts ────────────────────────────────────────────── */
@@ -232,6 +239,8 @@
     .post-time   { font-family: var(--mono); font-size: 0.7rem; opacity: 0.35; }
     .post-body   { font-size: 1rem; line-height: 1.55; }
 
+    .profile-header-wrap { display: flex; justify-content: space-between; align-items: baseline; }
+    .profile-actions { display: flex; gap: 0.5rem; }
     .profile-name   { font-size: 1.2rem; font-weight: 400; }
     .profile-wallet { font-family: var(--mono); font-size: 0.7rem; opacity: 0.4; margin: 0.2rem 0 0.6rem; }
     .profile-bio    { font-size: 0.95rem; opacity: 0.75; margin-bottom: 1.25rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border); }
@@ -239,14 +248,16 @@
     .profile-post:first-of-type { border-top: 1px solid var(--border); }
     .profile-post-time { font-family: var(--mono); font-size: 0.7rem; opacity: 0.35; margin-top: 0.3rem; }
 
-    /* ── Toast / Task popup ───────────────────────────────── */
+    /* ── Toast (Stackable, bottom center) ─────────────────── */
     #toast-container {
       position: fixed;
       bottom: 1.25rem;
-      right: 1.25rem;
+      left: 50%;
+      transform: translateX(-50%);
       z-index: 9999;
       display: flex;
       flex-direction: column;
+      align-items: center;
       gap: 0.5rem;
       pointer-events: none;
     }
@@ -322,8 +333,6 @@
       display: none;
     }
     .reply-area textarea {
-      min-height: 52px;
-      font-size: 0.9rem;
       margin-bottom: 0.4rem;
     }
     .reply-area .btn-row { margin-top: 0; }
@@ -342,7 +351,6 @@
     }
     .reply-body { font-size: 0.9rem; line-height: 1.45; }
 
-    /* ── No-wallet feed notice ────────────────────────────── */
     .no-wallet-notice {
       font-family: var(--mono);
       font-size: 0.72rem;
@@ -350,44 +358,20 @@
       padding: 0.6rem 0 0.9rem;
       display: flex;
       align-items: center;
+      text-align: center;
+      justify-content: center;
       gap: 0.45rem;
     }
     .no-wallet-notice svg { opacity: 0.7; flex-shrink: 0; }
   </style>
 </head>
 
-
-<!-- HTML -->
-
-
 <body>
 
 <div class="wrap">
   <header>
-    <h1 id="site-title">Chainboard</h1>
-    <div class="header-actions">
-      <button class="btn" id="wallet-btn" onclick="connectWallet()">Connect Wallet</button>
-      <button id="new-post-btn" class="btn" onclick="openComposeModal()" style="display:none">New Post</button>
-      <!-- Dark mode icon button -->
-      <button class="icon-btn" onclick="toggleTheme()" id="theme-btn" title="Toggle dark mode" aria-label="Toggle dark mode">
-        <!-- sun icon (shown in dark mode) -->
-        <svg id="icon-sun" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:none">
-          <circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/>
-          <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
-          <line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/>
-          <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
-        </svg>
-        <!-- moon icon (shown in light mode) -->
-        <svg id="icon-moon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
-        </svg>
-      </button>
-    </div>
-  </header>
-
-  <section>
-    <div class="feed-header">
-      <div class="section-label" style="margin:0">Feed</div>
+    <div class="header-title-wrap">
+      <h1 id="site-title">Chainboard</h1>
       <button class="icon-btn" onclick="loadFeed()" title="Refresh feed" aria-label="Refresh feed">
         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
           <polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/>
@@ -395,6 +379,46 @@
         </svg>
       </button>
     </div>
+    
+    <div class="header-actions">
+      <button class="icon-btn" onclick="openDownloadModal()" title="Download" aria-label="Download">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+        </svg>
+      </button>
+
+      <button class="icon-btn" onclick="toggleTheme()" id="theme-btn" title="Toggle dark mode" aria-label="Toggle dark mode">
+        <svg id="icon-sun" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:none">
+          <circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/>
+          <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+          <line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/>
+          <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+        </svg>
+        <svg id="icon-moon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+        </svg>
+      </button>
+
+      <button class="icon-btn" id="wallet-btn" onclick="connectWallet()" title="Connect Wallet" aria-label="Account">
+        <svg id="icon-wallet" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"/>
+        </svg>
+        <svg id="icon-user" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:none">
+          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+        </svg>
+      </button>
+    </div>
+  </header>
+
+  <section>
+    <div id="inline-compose" style="display: none;">
+      <textarea id="post-content" placeholder="What's on your mind?" maxlength="280" oninput="this.style.height='auto'; this.style.height=this.scrollHeight+'px'; estimatePostCost()"></textarea>
+      <div class="btn-row">
+        <span id="gas-estimate"></span>
+        <button class="btn primary" onclick="createPost()">Post</button>
+      </div>
+    </div>
+
     <div id="feed">
       <div class="no-wallet-notice">
         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
@@ -406,48 +430,35 @@
   </section>
 </div>
 
-<!-- Toast container -->
 <div id="toast-container"></div>
 
-<!-- New Post compose modal -->
-<div class="overlay" id="compose-overlay">
-  <div class="modal">
-    <button class="modal-close" onclick="closeComposeModal()" aria-label="Close">
-      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-        <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-      </svg>
-    </button>
-    <div class="modal-title">New Post</div>
-    <div class="form-group">
-      <textarea id="post-content" placeholder="What's on your mind?" maxlength="280" oninput="estimatePostCost()"></textarea>
-    </div>
-    <div class="btn-row">
-      <button class="btn primary" onclick="createPost()">Post</button>
-      <button class="btn" onclick="closeComposeModal()">Cancel</button>
-    </div>
-    <div id="gas-estimate" style="font-family:var(--mono);font-size:0.68rem;opacity:0.4;margin-top:0.5rem;"></div>
-  </div>
-</div>
-
-<!-- Account modal -->
 <div class="overlay" id="account-overlay">
   <div class="modal">
-    <button class="modal-close" id="account-close" onclick="closeAccountModal()" style="display:none" aria-label="Close">
-      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-        <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-      </svg>
-    </button>
-    <div class="modal-title" id="account-modal-title">Create Account</div>
+    <div class="modal-header">
+      <h2 class="modal-title" id="account-modal-title">Create Account</h2>
+      <button class="modal-close" id="account-close" onclick="closeAccountModal()" style="display:none" aria-label="Close">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+        </svg>
+      </button>
+    </div>
 
     <div id="account-view" style="display:none">
-      <div class="profile-name" id="av-name"></div>
+      <div class="profile-header-wrap">
+        <div class="profile-name" id="av-name"></div>
+        <div class="profile-actions">
+          <button class="icon-btn" onclick="switchToEditMode()" title="Edit Account">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+          </button>
+          <button class="icon-btn" style="color: #c0392b; opacity: 0.8;" onclick="deleteAccount()" title="Delete Account">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+          </button>
+        </div>
+      </div>
       <div class="profile-wallet" id="av-wallet"></div>
       <div class="profile-bio" id="av-bio"></div>
-      <div class="btn-row" style="margin-bottom:1.25rem">
-        <button class="btn" onclick="switchToEditMode()">Edit Account</button>
-        <button class="btn danger" onclick="deleteAccount()">Delete Account</button>
-      </div>
-      <div class="section-label">Your Posts</div>
+      
+      <div class="section-label" style="margin-top:1.25rem;">Your Posts</div>
       <div id="av-posts"><p class="empty">Loading...</p></div>
     </div>
 
@@ -468,15 +479,16 @@
   </div>
 </div>
 
-<!-- Profile modal -->
 <div class="overlay" id="profile-overlay">
   <div class="modal">
-    <button class="modal-close" onclick="closeProfileModal()" aria-label="Close">
-      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-        <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-      </svg>
-    </button>
-    <div class="profile-name" id="prof-name"></div>
+    <div class="modal-header">
+      <h2 class="profile-name modal-title" id="prof-name"></h2>
+      <button class="modal-close" onclick="closeProfileModal()" aria-label="Close">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+        </svg>
+      </button>
+    </div>
     <div class="profile-wallet" id="prof-wallet"></div>
     <div class="profile-bio" id="prof-bio"></div>
     <div class="section-label">Posts</div>
@@ -484,8 +496,34 @@
   </div>
 </div>
 
+<div class="overlay" id="download-overlay">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 class="modal-title">Download Client</h2>
+      <button class="modal-close" onclick="closeDownloadModal()" aria-label="Close">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+        </svg>
+      </button>
+    </div>
+    <div class="section-label">Select your architecture</div>
+    <div class="btn-row" style="flex-direction: column; align-items: stretch; gap: 0.5rem;">
+      <a href="/downloads/chainboard-client-windows-aarch64.exe" download style="text-decoration: none; display: block;">
+        <button class="btn" style="width: 100%;">Windows (aarch64)</button>
+      </a>
+      <a href="/downloads/chainboard-client-windows-x86_64.exe" download style="text-decoration: none; display: block;">
+        <button class="btn" style="width: 100%;">Windows (aarch64)</button>
+      </a>
+      <a href="/downloads/chainboard-client-linux-x86_64.exe" download style="text-decoration: none; display: block;">
+        <button class="btn" style="width: 100%;">Windows (aarch64)</button>
+      </a>
+      <a href="/downloads/chainboard-client-macOS.exe" download style="text-decoration: none; display: block;">
+        <button class="btn" style="width: 100%;">Windows (aarch64)</button>
+      </a>
+    </div>
+  </div>
+</div>
 
-<!-- LOGIC -->
 
 <script>
   const CONTRACT_ADDRESS = "0x2E11d15B0e6D203A49D0165418B294667ADC6C9c";
@@ -518,7 +556,6 @@
   let hasAccount = false;
   let editing = false;
 
-  // ── Caches ─────────────────────────────────────────────────────────────────
   const accountCache = new Map();
 
   async function resolveAccount(addr) {
@@ -534,7 +571,6 @@
     }
   }
 
-  // ── Toast notifications ─────────────────────────────────────────────────────
   function showToast(msg, type = "", autoDismiss = false) {
     const container = document.getElementById("toast-container");
     const toast = document.createElement("div");
@@ -571,7 +607,24 @@
     return { el: toast, dismiss };
   }
 
-  // ── Wallet ──────────────────────────────────────────────────────────────────
+  function setConnectedUI() {
+    document.getElementById("icon-wallet").style.display = "none";
+    document.getElementById("icon-user").style.display = "block";
+    const btn = document.getElementById("wallet-btn");
+    btn.onclick = () => openAccountModal(true);
+    btn.title = "Profile";
+    document.getElementById("inline-compose").style.display = "block";
+  }
+
+  function setDisconnectedUI() {
+    document.getElementById("icon-wallet").style.display = "block";
+    document.getElementById("icon-user").style.display = "none";
+    const btn = document.getElementById("wallet-btn");
+    btn.onclick = connectWallet;
+    btn.title = "Connect Wallet";
+    document.getElementById("inline-compose").style.display = "none";
+  }
+
   async function connectWallet() {
     if (!window.ethereum) return showToast("MetaMask not found.", "error");
     try {
@@ -628,10 +681,7 @@
       const [name, bio] = await contract.getAccount(myAddress);
       hasAccount = true;
       accountCache.set(myAddress.toLowerCase(), { name, bio });
-      const btn = document.getElementById("wallet-btn");
-      btn.textContent = name;
-      btn.onclick = () => openAccountModal(true);
-      document.getElementById("new-post-btn").style.display = "inline-block";
+      setConnectedUI();
       await loadFeed();
     } catch(e) {
       hasAccount = false;
@@ -639,16 +689,6 @@
     }
   }
 
-  // ── Compose modal ───────────────────────────────────────────────────────────
-  function openComposeModal() {
-    document.getElementById("compose-overlay").classList.add("open");
-    setTimeout(() => document.getElementById("post-content").focus(), 50);
-  }
-  function closeComposeModal() {
-    document.getElementById("compose-overlay").classList.remove("open");
-  }
-
-  // ── Account modal ───────────────────────────────────────────────────────────
   function openAccountModal(canClose) {
     document.getElementById("account-overlay").classList.add("open");
     document.getElementById("account-close").style.display = canClose ? "block" : "none";
@@ -733,7 +773,7 @@
     const name = document.getElementById("reg-name").value.trim();
     const bio  = document.getElementById("reg-bio").value.trim();
     if (!name) return showToast("Name is required.", "error");
-    const t = showToast("Sending transaction...");
+    const t = showToast(editing ? "Updating account..." : "Creating account...");
     try {
       const tx = editing
         ? await contract.updateAccount(name, bio)
@@ -744,20 +784,16 @@
       accountCache.set(myAddress.toLowerCase(), { name, bio });
       hasAccount = true;
       editing = false;
-      const btn = document.getElementById("wallet-btn");
-      btn.textContent = name;
-      btn.onclick = () => openAccountModal(true);
-      document.getElementById("new-post-btn").style.display = "inline-block";
+      setConnectedUI();
       document.getElementById("account-close").style.display = "block";
       closeAccountModal();
-      // Load feed immediately after account creation
       await loadFeed();
     } catch(e) { t.dismiss(); showToast(e.reason || e.message, "error"); }
   }
 
   async function deleteAccount() {
     if (!confirm("Delete your account? Your posts will remain on-chain.")) return;
-    const t = showToast("Sending transaction...");
+    const t = showToast("Deleting account...");
     try {
       const tx = await contract.deleteAccount();
       await tx.wait();
@@ -765,16 +801,20 @@
       hasAccount = false;
       accountCache.delete(myAddress.toLowerCase());
       showToast("Account deleted.", "success");
-      const btn = document.getElementById("wallet-btn");
-      btn.textContent = myAddress.slice(0,6) + "..." + myAddress.slice(-4);
-      btn.onclick = connectWallet;
-      document.getElementById("new-post-btn").style.display = "none";
+      setDisconnectedUI();
       closeAccountModal();
       openAccountModal(false);
     } catch(e) { t.dismiss(); showToast(e.reason || e.message, "error"); }
   }
 
-  // ── Profile modal ───────────────────────────────────────────────────────────
+  function openDownloadModal() {
+    document.getElementById("download-overlay").classList.add("open");
+  }
+
+  function closeDownloadModal() {
+    document.getElementById("download-overlay").classList.remove("open");
+  }
+
   async function openProfileModal(address) {
     document.getElementById("profile-overlay").classList.add("open");
     document.getElementById("prof-wallet").textContent = address;
@@ -824,7 +864,6 @@
     document.getElementById("profile-overlay").classList.remove("open");
   }
 
-  // ── Posts & Feed ────────────────────────────────────────────────────────────
   async function estimatePostCost() {
     if (!contract || !provider) return;
     const content = document.getElementById("post-content").value;
@@ -842,32 +881,29 @@
     if (!contract) return showToast("Connect wallet first.", "error");
     const content = document.getElementById("post-content").value.trim();
     if (!content) return showToast("Post cannot be empty.", "error");
-    const t = showToast("Sending transaction...");
+    const t = showToast("Publishing post...");
     try {
       const tx = await contract.createPost(content);
       await tx.wait();
       document.getElementById("post-content").value = "";
+      document.getElementById("post-content").style.height = 'auto';
       document.getElementById("gas-estimate").textContent = "";
       t.dismiss();
       showToast("Posted.", "success");
-      closeComposeModal();
-      // feed updates via PostCreated event
     } catch(e) { t.dismiss(); showToast(e.reason || e.message, "error"); }
   }
 
   async function deletePost(id) {
     if (!confirm("Delete this post?")) return;
-    const t = showToast("Sending transaction...");
+    const t = showToast("Deleting post...");
     try {
       const tx = await contract.deletePost(id);
       await tx.wait();
       t.dismiss();
       showToast("Post deleted.", "success");
-      // feed updates via PostDeleted event
     } catch(e) { t.dismiss(); showToast(e.reason || e.message, "error"); }
   }
 
-  // ── Likes ───────────────────────────────────────────────────────────────────
   async function toggleLike(id, btn) {
     if (!contract) return;
     const liked = btn.classList.contains("liked");
@@ -875,7 +911,6 @@
       btn.disabled = true;
       const tx = liked ? await contract.unlikePost(id) : await contract.likePost(id);
       await tx.wait();
-      // UI updates via PostLiked/PostUnliked event
     } catch(e) {
       showToast(e.reason || e.message, "error");
     } finally {
@@ -893,7 +928,6 @@
     } catch(_) {}
   }
 
-  // ── Replies ─────────────────────────────────────────────────────────────────
   function toggleReply(id, btn) {
     const area = document.getElementById(`reply-area-${id}`);
     const open = area.style.display === "block";
@@ -907,16 +941,16 @@
     const textarea = area.querySelector("textarea");
     const text    = textarea.value.trim();
     if (!text) return;
-    const t = showToast("Sending transaction...");
+    const t = showToast("Publishing reply...");
     try {
       btn.disabled = true;
       const tx = await contract.createReply(id, text);
       await tx.wait();
       textarea.value = "";
+      textarea.style.height = 'auto';
       area.style.display = "none";
       t.dismiss();
       showToast("Reply posted.", "success");
-      // UI updates via ReplyCreated event
     } catch(e) {
       t.dismiss();
       showToast(e.reason || e.message, "error");
@@ -934,7 +968,6 @@
     el.className = "reply-item";
     el.innerHTML = `<div class="reply-meta">${esc(authorLabel)}</div><div class="reply-body">${esc(content)}</div>`;
     container.appendChild(el);
-    // update reply count on button
     const replyBtn = document.querySelector(`.post[data-id="${postId}"] .btn-reply .reply-count`);
     if (replyBtn) {
       const count = container.children.length;
@@ -954,13 +987,11 @@
     } catch(_) {}
   }
 
-  // SVG icons ─────────────────────────────────────────────────────────────────
   const SVG_HEART_EMPTY = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>`;
   const SVG_HEART_FILLED = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>`;
   const SVG_REPLY = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 17 4 12 9 7"/><path d="M20 18v-2a4 4 0 0 0-4-4H4"/></svg>`;
   const SVG_TRASH = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>`;
 
-  // ── Shared post element builder ─────────────────────────────────────────────
   async function buildPostEl(id, authorAddr, authorLabel, content, timestamp) {
     const date  = new Date(timestamp * 1000).toLocaleDateString("en-CA", {
       month: "short", day: "numeric", year: "numeric"
@@ -995,7 +1026,7 @@
         ${isOwn ? `<button class="btn-delete" onclick="deletePost(${id})" title="Delete post">${SVG_TRASH}</button>` : ""}
       </div>
       <div class="reply-area" id="reply-area-${id}">
-        <textarea placeholder="Your reply..."></textarea>
+        <textarea placeholder="Your reply..." oninput="this.style.height='auto'; this.style.height=this.scrollHeight+'px';"></textarea>
         <div class="btn-row">
           <button class="btn primary" onclick="submitReply(${id}, this)">Reply</button>
           <button class="btn" onclick="toggleReply(${id}, this)">Cancel</button>
@@ -1004,7 +1035,6 @@
       <div class="replies" id="replies-${id}"></div>
     `;
 
-    // load existing replies async after element is built
     setTimeout(() => loadReplies(id), 0);
     return el;
   }
@@ -1056,12 +1086,10 @@
   });
   document.getElementById("profile-overlay").addEventListener("click", function(e) {
     if (e.target === this) closeProfileModal();
-  });
-  document.getElementById("compose-overlay").addEventListener("click", function(e) {
-    if (e.target === this) closeComposeModal();
-  });
+  document.getElementById("download-overlay").addEventListener("click", function(e) {
+    if (e.target === this) closeDownloadModal();
+  }); });
 
-  // ── Auto-login ──────────────────────────────────────────────────────────────
   (async () => {
     if (!window.ethereum) return;
     const accounts = await window.ethereum.request({ method: "eth_accounts" });
