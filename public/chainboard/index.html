@@ -229,16 +229,55 @@
     #status.error   { color: #c0392b; opacity: 1; }
     #status.success { color: #27ae60; opacity: 1; }
 
-    #demo-badge {
-      display: none;
-      font-family: var(--mono);
-      font-size: 0.65rem;
-      opacity: 0.4;
-      margin-left: 0.5rem;
-      vertical-align: middle;
-    }
-
     .empty { opacity: 0.35; font-size: 0.9rem; padding: 0.75rem 0; }
+
+    /* ── Post actions (likes + reply) ─────────────────────────────── */
+    .post-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      margin-top: 0.5rem;
+      flex-wrap: wrap;
+    }
+    .btn-like, .btn-reply {
+      font-family: var(--mono);
+      font-size: 0.72rem;
+      background: none;
+      border: none;
+      color: var(--fg);
+      opacity: 0.45;
+      cursor: pointer;
+      padding: 0;
+      user-select: none;
+      transition: opacity 0.15s;
+    }
+    .btn-like:hover, .btn-reply:hover { opacity: 1; }
+    .btn-like.liked { opacity: 1; color: #c0392b; }
+
+    .reply-area {
+      margin-top: 0.6rem;
+      display: none;
+    }
+    .reply-area textarea {
+      min-height: 52px;
+      font-size: 0.9rem;
+      margin-bottom: 0.4rem;
+    }
+    .reply-area .btn-row { margin-top: 0; }
+
+    .replies { margin-top: 0.4rem; }
+    .reply-item {
+      border-left: 1px solid var(--border);
+      padding: 0.4rem 0 0.4rem 0.75rem;
+      margin-top: 0.4rem;
+    }
+    .reply-meta {
+      font-family: var(--mono);
+      font-size: 0.68rem;
+      opacity: 0.45;
+      margin-bottom: 0.15rem;
+    }
+    .reply-body { font-size: 0.9rem; line-height: 1.45; }
   </style>
 </head>
 
@@ -250,7 +289,7 @@
 
 <div class="wrap">
   <header>
-    <h1 id="site-title">Chainboard<span id="demo-badge">demo</span></h1>
+    <h1 id="site-title">Chainboard</h1>
     <div class="header-actions">
       <button class="btn" id="wallet-btn" onclick="connectWallet()">connect wallet</button>
       <button class="theme-btn" onclick="toggleTheme()" id="theme-btn">dark</button>
@@ -288,10 +327,12 @@
       <div class="profile-name" id="av-name"></div>
       <div class="profile-wallet" id="av-wallet"></div>
       <div class="profile-bio" id="av-bio"></div>
-      <div class="btn-row">
+      <div class="btn-row" style="margin-bottom:1.25rem">
         <button class="btn" onclick="switchToEditMode()">edit account</button>
         <button class="btn danger" onclick="deleteAccount()">delete account</button>
       </div>
+      <div class="section-label">your posts</div>
+      <div id="av-posts"><p class="empty">loading...</p></div>
     </div>
 
     <div id="account-form">
@@ -340,108 +381,32 @@
     "function deletePost(uint256 _id) external",
     "function getPost(uint256 _id) external view returns (string content, address author, uint256 timestamp)",
     "function postCount() external view returns (uint256)",
-    "function getPostsPaginated(uint256 _limit, uint256 _offset) external view returns (uint256[] ids, string[] contents, address[] authors, uint256[] timestamps)"
+    "function getPostsPaginated(uint256 _limit, uint256 _offset) external view returns (uint256[] ids, string[] contents, address[] authors, uint256[] timestamps)",
+    "function getPostsByAuthor(address _author) external view returns (uint256[] ids, string[] contents, address[] authors, uint256[] timestamps)",
   ];
 
   let provider, signer, contract, myAddress;
   let hasAccount = false;
   let editing = false;
-  let demoMode = false;
-  let isFetchingFeed = false;
 
-  const DEMO_MY_ADDRESS = "0xDEAD000000000000000000000000000000000001";
-  const DEMO_ACCOUNTS = {
-    "0xDEAD000000000000000000000000000000000001": { name: "you",        bio: "this is your demo account."              },
-    "0xDEAD000000000000000000000000000000000002": { name: "alice.eth",  bio: "building in public. coffee addict."      },
-    "0xDEAD000000000000000000000000000000000003": { name: "satoshi_jr", bio: "decentralize everything."                },
-    "0xDEAD000000000000000000000000000000000004": { name: "vitalik_fan",bio: "just here for the vibes."                },
-  };
-  const DEMO_POSTS = [
-    { author: "0xDEAD000000000000000000000000000000000002", content: "just deployed my first contract on mainnet. no bugs. probably.",   timestamp: Date.now()/1000 - 3600,    deleted: false },
-    { author: "0xDEAD000000000000000000000000000000000001", content: "hello chain. this is my first post.",                              timestamp: Date.now()/1000 - 7200,    deleted: false },
-    { author: "0xDEAD000000000000000000000000000000000003", content: "gas fees are the rent of the internet.",                           timestamp: Date.now()/1000 - 86400,   deleted: false },
-    { author: "0xDEAD000000000000000000000000000000000004", content: "if you're not on-chain you're not real.",                          timestamp: Date.now()/1000 - 172800,  deleted: false },
-    { author: "0xDEAD000000000000000000000000000000000002", content: "reminder: not your keys, not your coins.",                         timestamp: Date.now()/1000 - 259200,  deleted: false },
-  ];
+  // ── Caches ─────────────────────────────────────────────────────────────────
+  const accountCache = new Map();
+  const likeCache    = new Map(); // postId -> { count, liked }
 
-  const demoContract = {
-    getAccount: async (addr) => {
-      const a = DEMO_ACCOUNTS[addr];
-      if (!a) throw new Error("Account does not exist");
-      return [a.name, a.bio];
-    },
-    postCount: async () => DEMO_POSTS.length,
-    getPost: async (i) => {
-      const p = DEMO_POSTS[i];
-      if (p.deleted) throw new Error("Deleted");
-      return [p.content, p.author, p.timestamp];
-    },
-    getPostsPaginated: async (limit, offset) => {
-      const ids = [], contents = [], authors = [], timestamps = [];
-      let added = 0;
-      for (let i = DEMO_POSTS.length - 1 - offset; i >= 0 && added < limit; i--) {
-        const p = DEMO_POSTS[i];
-        if (!p.deleted) {
-          ids.push(i);
-          contents.push(p.content);
-          authors.push(p.author);
-          timestamps.push(p.timestamp);
-          added++;
-        }
-      }
-      return [ids, contents, authors, timestamps];
-    },
-    createAccount: async (name, bio) => {
-      DEMO_ACCOUNTS[DEMO_MY_ADDRESS] = { name, bio };
-      return { wait: async () => {} };
-    },
-    updateAccount: async (name, bio) => {
-      DEMO_ACCOUNTS[DEMO_MY_ADDRESS] = { name, bio };
-      return { wait: async () => {} };
-    },
-    deleteAccount: async () => {
-      delete DEMO_ACCOUNTS[DEMO_MY_ADDRESS];
-      return { wait: async () => {} };
-    },
-    createPost: async (content) => {
-      DEMO_POSTS.push({ author: DEMO_MY_ADDRESS, content, timestamp: Date.now()/1000, deleted: false });
-      return { wait: async () => {} };
-    },
-    deletePost: async (i) => {
-      DEMO_POSTS[i].deleted = true;
-      return { wait: async () => {} };
-    },
-    createPost: { estimateGas: async () => 50000n },
-    removeAllListeners: () => {},
-    on: () => {}
-  };
-
-  let titleClicks = 0, titleTimer;
-  document.getElementById("site-title").addEventListener("click", () => {
-    titleClicks++;
-    clearTimeout(titleTimer);
-    titleTimer = setTimeout(() => { titleClicks = 0; }, 600);
-    if (titleClicks >= 3) {
-      titleClicks = 0;
-      activateDemo();
+  async function resolveAccount(addr) {
+    const key = addr.toLowerCase();
+    if (accountCache.has(key)) return accountCache.get(key);
+    try {
+      const [name, bio] = await contract.getAccount(addr);
+      const result = { name, bio };
+      accountCache.set(key, result);
+      return result;
+    } catch(_) {
+      return null;
     }
-  });
-
-  function activateDemo() {
-    demoMode  = true;
-    contract  = demoContract;
-    myAddress = DEMO_MY_ADDRESS;
-    hasAccount = true;
-    document.getElementById("demo-badge").style.display = "inline";
-    const btn = document.getElementById("wallet-btn");
-    btn.textContent = DEMO_ACCOUNTS[DEMO_MY_ADDRESS].name;
-    btn.onclick = () => openAccountModal(true);
-    document.getElementById("post-section").style.display = "block";
-    setStatus("demo mode active.", "success");
-    loadFeed();
   }
 
-  // ── Wallet & Events ────────────────────────────────────────────────────
+  // ── Wallet ─────────────────────────────────────────────────────────────────
   function setStatus(msg, type = "") {
     const el = document.getElementById("status");
     el.textContent = msg;
@@ -450,40 +415,6 @@
 
   async function connectWallet() {
     if (!window.ethereum) return setStatus("metamask not found.", "error");
-
-    // 1. Request account access
-    const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
-
-    // 2. IMMEDIATE NETWORK CHECK
-    const chainId = await window.ethereum.request({ method: 'eth_chainId' });
-    const SEPOLIA_ID = '0xaa36a7';
-
-    if (chainId !== SEPOLIA_ID) {
-        try {
-            await window.ethereum.request({
-                method: 'wallet_switchEthereumChain',
-                params: [{ chainId: SEPOLIA_ID }],
-            });
-        } catch (err) {
-            // If Sepolia isn't in their MetaMask, add it automatically
-            if (err.code === 4902) {
-                await window.ethereum.request({
-                    method: 'wallet_addEthereumChain',
-                    params: [{
-                        chainId: SEPOLIA_ID,
-                        chainName: 'Sepolia Test Network',
-                        nativeCurrency: { name: 'Sepolia ETH', symbol: 'ETH', decimals: 18 },
-                        rpcUrls: ['https://rpc.sepolia.org'],
-                        blockExplorerUrls: ['https://sepolia.etherscan.io']
-                    }]
-                });
-            } else {
-                setStatus("Please switch to Sepolia to continue.", "error");
-                return;
-            }
-        }
-    }
-
     try {
       provider  = new ethers.BrowserProvider(window.ethereum);
       signer    = await provider.getSigner();
@@ -491,11 +422,18 @@
       myAddress = await signer.getAddress();
       setStatus("wallet connected.", "success");
 
-      // Real-time Event Listeners
       contract.removeAllListeners();
-      contract.on("PostCreated", () => loadFeed());
-      contract.on("PostDeleted", () => loadFeed());
-      contract.on("AccountUpdated", () => loadFeed());
+      contract.on("PostCreated", (id, author, content, timestamp) => {
+        prependPost(Number(id), author, content, Number(timestamp));
+      });
+      contract.on("PostDeleted", (id) => {
+        document.querySelector(`.post[data-id="${id}"]`)?.remove();
+      });
+      contract.on("AccountUpdated", (addr) => {
+        accountCache.delete(addr.toLowerCase());
+      });
+
+      window.ethereum.on("accountsChanged", () => location.reload());
 
       await checkAccount();
     } catch(e) { setStatus(e.message, "error"); }
@@ -505,15 +443,11 @@
     try {
       const [name, bio] = await contract.getAccount(myAddress);
       hasAccount = true;
-
+      accountCache.set(myAddress.toLowerCase(), { name, bio });
       const btn = document.getElementById("wallet-btn");
       btn.textContent = name;
       btn.onclick = () => openAccountModal(true);
-
-      closeAccountModal(); 
-
       document.getElementById("post-section").style.display = "block";
-      setStatus("account loaded.", "success");
       await loadFeed();
     } catch(e) {
       hasAccount = false;
@@ -521,7 +455,7 @@
     }
   }
 
-  // ── Account modal ──────────────────────────────────────────────────────
+  // ── Account modal ──────────────────────────────────────────────────────────
   function openAccountModal(canClose) {
     document.getElementById("account-overlay").classList.add("open");
     document.getElementById("account-close").style.display = canClose ? "block" : "none";
@@ -538,11 +472,38 @@
     document.getElementById("account-modal-title").textContent = "your account";
     document.getElementById("account-view").style.display = "block";
     document.getElementById("account-form").style.display = "none";
-    contract.getAccount(myAddress).then(([name, bio]) => {
-      document.getElementById("av-name").textContent   = name;
+    const cached = accountCache.get(myAddress.toLowerCase());
+    if (cached) {
+      document.getElementById("av-name").textContent   = cached.name;
       document.getElementById("av-wallet").textContent = myAddress;
-      document.getElementById("av-bio").textContent    = bio;
-    });
+      document.getElementById("av-bio").textContent    = cached.bio;
+    } else {
+      contract.getAccount(myAddress).then(([name, bio]) => {
+        document.getElementById("av-name").textContent   = name;
+        document.getElementById("av-wallet").textContent = myAddress;
+        document.getElementById("av-bio").textContent    = bio;
+      });
+    }
+    loadAccountPosts();
+  }
+
+  async function loadAccountPosts() {
+    const container = document.getElementById("av-posts");
+    container.innerHTML = '<p class="empty">loading...</p>';
+    try {
+      const [ids, contents, , timestamps] = await contract.getPostsByAuthor(myAddress);
+      container.innerHTML = "";
+      if (ids.length === 0) { container.innerHTML = '<p class="empty">no posts yet.</p>'; return; }
+      for (let i = 0; i < ids.length; i++) {
+        const date = new Date(Number(timestamps[i]) * 1000).toLocaleDateString("en-CA", {
+          month: "short", day: "numeric", year: "numeric"
+        });
+        const el = document.createElement("div");
+        el.className = "profile-post";
+        el.innerHTML = `${esc(contents[i])}<div class="profile-post-time">${date}</div>`;
+        container.appendChild(el);
+      }
+    } catch(_) { container.innerHTML = '<p class="empty">could not load posts.</p>'; }
   }
 
   function showAccountForm() {
@@ -555,11 +516,18 @@
 
   function switchToEditMode() {
     editing = true;
-    contract.getAccount(myAddress).then(([name, bio]) => {
-      document.getElementById("reg-name").value = name;
-      document.getElementById("reg-bio").value  = bio;
+    const cached = accountCache.get(myAddress.toLowerCase());
+    if (cached) {
+      document.getElementById("reg-name").value = cached.name;
+      document.getElementById("reg-bio").value  = cached.bio;
       showAccountForm();
-    });
+    } else {
+      contract.getAccount(myAddress).then(([name, bio]) => {
+        document.getElementById("reg-name").value = name;
+        document.getElementById("reg-bio").value  = bio;
+        showAccountForm();
+      });
+    }
   }
 
   function switchToViewMode() {
@@ -579,6 +547,7 @@
         : await contract.createAccount(name, bio);
       await tx.wait();
       setStatus(editing ? "account updated." : "account created.", "success");
+      accountCache.set(myAddress.toLowerCase(), { name, bio });
       hasAccount = true;
       editing = false;
       const btn = document.getElementById("wallet-btn");
@@ -587,7 +556,6 @@
       document.getElementById("post-section").style.display = "block";
       document.getElementById("account-close").style.display = "block";
       closeAccountModal();
-      await loadFeed();
     } catch(e) { setStatus(e.reason || e.message, "error"); }
   }
 
@@ -598,6 +566,7 @@
       const tx = await contract.deleteAccount();
       await tx.wait();
       hasAccount = false;
+      accountCache.delete(myAddress.toLowerCase());
       setStatus("account deleted.", "success");
       const btn = document.getElementById("wallet-btn");
       btn.textContent = myAddress.slice(0,6) + "..." + myAddress.slice(-4);
@@ -608,43 +577,47 @@
     } catch(e) { setStatus(e.reason || e.message, "error"); }
   }
 
-  // ── Profile modal ──────────────────────────────────────────────────────
+  // ── Profile modal ──────────────────────────────────────────────────────────
   async function openProfileModal(address) {
     document.getElementById("profile-overlay").classList.add("open");
-    document.getElementById("prof-name").textContent   = "loading...";
     document.getElementById("prof-wallet").textContent = address;
-    document.getElementById("prof-bio").textContent    = "";
-    document.getElementById("prof-posts").innerHTML    = '<p class="empty">loading...</p>';
+    document.getElementById("prof-posts").innerHTML = '<p class="empty">loading...</p>';
 
-    try {
-      const [name, bio] = await contract.getAccount(address);
-      document.getElementById("prof-name").textContent = name;
-      document.getElementById("prof-bio").textContent  = bio;
-    } catch(_) {
-      document.getElementById("prof-name").textContent = address.slice(0,6) + "..." + address.slice(-4);
-      document.getElementById("prof-bio").textContent  = "no account registered.";
+    const cached = accountCache.get(address.toLowerCase());
+    if (cached) {
+      document.getElementById("prof-name").textContent = cached.name;
+      document.getElementById("prof-bio").textContent  = cached.bio;
+    } else {
+      document.getElementById("prof-name").textContent = "loading...";
+      document.getElementById("prof-bio").textContent  = "";
+      try {
+        const [name, bio] = await contract.getAccount(address);
+        accountCache.set(address.toLowerCase(), { name, bio });
+        document.getElementById("prof-name").textContent = name;
+        document.getElementById("prof-bio").textContent  = bio;
+      } catch(_) {
+        document.getElementById("prof-name").textContent = address.slice(0,6) + "..." + address.slice(-4);
+        document.getElementById("prof-bio").textContent  = "no account registered.";
+      }
     }
 
     try {
-      const count = Number(await contract.postCount());
+      const [ids, contents, , timestamps] = await contract.getPostsByAuthor(address);
       const container = document.getElementById("prof-posts");
       container.innerHTML = "";
-      let found = 0;
-      for (let i = count - 1; i >= 0; i--) {
-        try {
-          const [content, author, timestamp] = await contract.getPost(i);
-          if (author.toLowerCase() !== address.toLowerCase()) continue;
-          found++;
-          const date = new Date(Number(timestamp) * 1000).toLocaleDateString("en-CA", {
-            month: "short", day: "numeric", year: "numeric"
-          });
-          const el = document.createElement("div");
-          el.className = "profile-post";
-          el.innerHTML = `${esc(content)}<div class="profile-post-time">${date}</div>`;
-          container.appendChild(el);
-        } catch(e) { continue; } // Skip deleted posts
+      if (ids.length === 0) {
+        container.innerHTML = '<p class="empty">no posts yet.</p>';
+        return;
       }
-      if (found === 0) container.innerHTML = '<p class="empty">no posts yet.</p>';
+      for (let i = 0; i < ids.length; i++) {
+        const date = new Date(Number(timestamps[i]) * 1000).toLocaleDateString("en-CA", {
+          month: "short", day: "numeric", year: "numeric"
+        });
+        const el = document.createElement("div");
+        el.className = "profile-post";
+        el.innerHTML = `${esc(contents[i])}<div class="profile-post-time">${date}</div>`;
+        container.appendChild(el);
+      }
     } catch(e) {
       document.getElementById("prof-posts").innerHTML = '<p class="empty">could not load posts.</p>';
     }
@@ -654,18 +627,18 @@
     document.getElementById("profile-overlay").classList.remove("open");
   }
 
-  // ── Posts & Feed ───────────────────────────────────────────────────────
+  // ── Posts & Feed ───────────────────────────────────────────────────────────
   async function estimatePostCost() {
-    if (demoMode || !contract || !provider) return;
+    if (!contract || !provider) return;
     const content = document.getElementById("post-content").value;
     const el = document.getElementById("gas-estimate");
     if (!content) { el.textContent = ""; return; }
     try {
       const gasLimit = await contract.createPost.estimateGas(content);
-      const feeData = await provider.getFeeData();
-      const costEth = ethers.formatEther(gasLimit * feeData.gasPrice);
-      el.textContent = `Est. Gas Fee: ~${Number(costEth).toFixed(5)} ETH`;
-    } catch(e) { el.textContent = ""; }
+      const feeData  = await provider.getFeeData();
+      const costEth  = ethers.formatEther(gasLimit * feeData.gasPrice);
+      el.textContent = `est. gas: ~${Number(costEth).toFixed(5)} ETH`;
+    } catch(_) { el.textContent = ""; }
   }
 
   async function createPost() {
@@ -679,7 +652,7 @@
       document.getElementById("post-content").value = "";
       document.getElementById("gas-estimate").textContent = "";
       setStatus("posted.", "success");
-      // UI updates automatically via event listener
+      // feed updates via PostCreated event
     } catch(e) { setStatus(e.reason || e.message, "error"); }
   }
 
@@ -690,56 +663,114 @@
       const tx = await contract.deletePost(id);
       await tx.wait();
       setStatus("post deleted.", "success");
-      // UI updates automatically via event listener
+      // feed updates via PostDeleted event
     } catch(e) { setStatus(e.reason || e.message, "error"); }
   }
 
-  async function loadFeed() {
-    if (!contract || isFetchingFeed) return;
-    isFetchingFeed = true;
+  // ── Likes (DOM-only) ───────────────────────────────────────────────────────
+  function toggleLike(id, btn) {
+    const entry = likeCache.get(id) || { count: 0, liked: false };
+    entry.liked  = !entry.liked;
+    entry.count += entry.liked ? 1 : -1;
+    likeCache.set(id, entry);
+    btn.classList.toggle("liked", entry.liked);
+    btn.querySelector("span").textContent = entry.count;
+  }
 
+  // ── Replies (DOM-only) ─────────────────────────────────────────────────────
+  function toggleReply(id, btn) {
+    const area = document.getElementById(`reply-area-${id}`);
+    const open = area.style.display === "block";
+    area.style.display = open ? "none" : "block";
+    if (!open) area.querySelector("textarea").focus();
+  }
+
+  async function submitReply(id, btn) {
+    const area     = document.getElementById(`reply-area-${id}`);
+    const textarea = area.querySelector("textarea");
+    const text     = textarea.value.trim();
+    if (!text) return;
+
+    const account = myAddress ? await resolveAccount(myAddress) : null;
+    const label   = account ? account.name : myAddress
+      ? myAddress.slice(0,6) + "..." + myAddress.slice(-4)
+      : "anonymous";
+
+    const container = document.getElementById(`replies-${id}`);
+    const el = document.createElement("div");
+    el.className = "reply-item";
+    el.innerHTML = `<div class="reply-meta">${esc(label)}</div><div class="reply-body">${esc(text)}</div>`;
+    container.appendChild(el);
+
+    textarea.value = "";
+    area.style.display = "none";
+
+    // update reply count on the button
+    const replyBtn = area.previousElementSibling.querySelector(".btn-reply");
+    if (replyBtn) {
+      const count = container.children.length;
+      replyBtn.textContent = count > 0 ? `reply (${count})` : "reply";
+    }
+  }
+
+  // ── Shared post element builder ────────────────────────────────────────────
+  function buildPostEl(id, authorAddr, authorLabel, content, timestamp) {
+    const date  = new Date(timestamp * 1000).toLocaleDateString("en-CA", {
+      month: "short", day: "numeric", year: "numeric"
+    });
+    const isOwn = myAddress && authorAddr.toLowerCase() === myAddress.toLowerCase();
+    const likes = likeCache.get(id) || { count: 0, liked: false };
+
+    const el = document.createElement("div");
+    el.className = "post";
+    el.dataset.id = id;
+    el.innerHTML = `
+      <div class="post-header">
+        <button class="post-author" onclick="openProfileModal('${authorAddr}')">${esc(authorLabel)}</button>
+        <span class="post-time">${date}</span>
+      </div>
+      <div class="post-body">${esc(content)}</div>
+      <div class="post-actions">
+        <button class="btn-like${likes.liked ? " liked" : ""}" onclick="toggleLike(${id}, this)">♥ <span>${likes.count}</span></button>
+        <button class="btn-reply" onclick="toggleReply(${id}, this)">reply</button>
+        ${isOwn ? `<button class="btn danger" style="font-size:0.75rem;padding:0.15em 0.6em" onclick="deletePost(${id})">delete</button>` : ""}
+      </div>
+      <div class="reply-area" id="reply-area-${id}">
+        <textarea placeholder="your reply..."></textarea>
+        <div class="btn-row">
+          <button class="btn primary" onclick="submitReply(${id}, this)">reply</button>
+          <button class="btn" onclick="toggleReply(${id}, this)">cancel</button>
+        </div>
+      </div>
+      <div class="replies" id="replies-${id}"></div>
+    `;
+    return el;
+  }
+
+  async function prependPost(id, author, content, timestamp) {
     const feed = document.getElementById("feed");
+    const empty = feed.querySelector(".empty");
+    if (empty) empty.remove();
+    const account     = await resolveAccount(author);
+    const authorLabel = account ? account.name : author.slice(0,6) + "..." + author.slice(-4);
+    feed.prepend(buildPostEl(id, author, authorLabel, content, timestamp));
+  }
 
+  async function loadFeed() {
+    if (!contract) return;
+    const feed = document.getElementById("feed");
+    feed.innerHTML = "";
     try {
       const [ids, contents, authors, timestamps] = await contract.getPostsPaginated(50, 0);
-
-      feed.innerHTML = "";
-
-      if (ids.length === 0) {
-        feed.innerHTML = '<p class="empty">No posts yet.</p>';
-        return;
-      }
-
+      if (ids.length === 0) { feed.innerHTML = '<p class="empty">no posts yet.</p>'; return; }
       for (let i = 0; i < ids.length; i++) {
-        let authorLabel = authors[i].slice(0,6) + "..." + authors[i].slice(-4);
-        try {
-          const [name] = await contract.getAccount(authors[i]);
-          authorLabel = name;
-        } catch(e) {}
-
-        const date = new Date(Number(timestamps[i]) * 1000).toLocaleDateString("en-CA", {
-          month: "short", day: "numeric", year: "numeric"
-        });
-
-        const isOwn = myAddress && authors[i].toLowerCase() === myAddress.toLowerCase();
-
-        const el = document.createElement("div");
-        el.className = "post";
-        el.innerHTML = `
-          <div class="post-header">
-            <button class="post-author" onclick="openProfileModal('${authors[i]}')">${esc(authorLabel)}</button>
-            <span class="post-time">${date}</span>
-          </div>
-          <div class="post-body">${esc(contents[i])}</div>
-          ${isOwn ? `<div class="post-delete"><button class="btn danger" onclick="deletePost(${ids[i]})">delete</button></div>` : ""}
-        `;
-        feed.appendChild(el);
+        const account     = await resolveAccount(authors[i]);
+        const authorLabel = account ? account.name : authors[i].slice(0,6) + "..." + authors[i].slice(-4);
+        feed.appendChild(buildPostEl(Number(ids[i]), authors[i], authorLabel, contents[i], Number(timestamps[i])));
       }
     } catch(e) {
-      feed.innerHTML = '<p class="empty">could not load feed.</p>'; 
+      feed.innerHTML = '<p class="empty">could not load feed.</p>';
       console.error(e);
-    } finally {
-      isFetchingFeed = false;
     }
   }
 
