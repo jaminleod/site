@@ -518,19 +518,19 @@
       <a href="/downloads/chainboard-client-windows-x64.exe" download style="text-decoration: none; display: block;">
         <button class="btn" style="width: 100%;">Windows (x64)</button>
       </a>
-      <a href="/downloads/chainboard-client-macOS-x64.exe" download style="text-decoration: none; display: block;">
+      <a href="/downloads/chainboard-client-macOS-x64" download style="text-decoration: none; display: block;">
         <button class="btn" style="width: 100%;">macOS (x64)</button>
       </a>
-      <a href="/downloads/chainboard-client-macOS-arm64.exe" download style="text-decoration: none; display: block;">
+      <a href="/downloads/chainboard-client-macOS-arm64" download style="text-decoration: none; display: block;">
         <button class="btn" style="width: 100%;">macOS (arm64)</button>
       </a>
-      <a href="/downloads/chainboard-client-linux-x86.exe" download style="text-decoration: none; display: block;">
+      <a href="/downloads/chainboard-client-linux-x86" download style="text-decoration: none; display: block;">
         <button class="btn" style="width: 100%;">Linux (x86)</button>
       </a>
-      <a href="/downloads/chainboard-client-linux-x64.exe" download style="text-decoration: none; display: block;">
+      <a href="/downloads/chainboard-client-linux-x64" download style="text-decoration: none; display: block;">
         <button class="btn" style="width: 100%;">Linux (x64)</button>
       </a>
-      <a href="/downloads/chainboard-client-linux-arm64.exe" download style="text-decoration: none; display: block;">
+      <a href="/downloads/chainboard-client-linux-arm64" download style="text-decoration: none; display: block;">
         <button class="btn" style="width: 100%;">Linux (arm64)</button>
       </a>
     </div>
@@ -806,6 +806,10 @@
     const name = document.getElementById("reg-name").value.trim();
     const bio  = document.getElementById("reg-bio").value.trim();
     if (!name) return showToast("Name is required.", "error");
+
+    const btn = document.getElementById("reg-btn");
+    btn.disabled = true;
+
     const t = showToast(editing ? "Updating account..." : "Creating account...");
     try {
       const tx = editing
@@ -821,7 +825,12 @@
       document.getElementById("account-close").style.display = "block";
       closeAccountModal();
       await loadFeed();
-    } catch(e) { t.dismiss(); showToast(e.reason || e.message, "error"); }
+    } catch(e) { 
+      if (t) t.dismiss(); 
+      showToast(e.reason || e.message, "error"); 
+    } finally {
+      btn.disabled = false;
+    }
   }
 
   async function deleteAccount() {
