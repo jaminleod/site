@@ -193,9 +193,7 @@
 
     /* ── Inline Compose Area ──────────────────────────────── */
     #inline-compose {
-      margin-bottom: 1.5rem;
       padding-bottom: 1.5rem;
-      border-bottom: 1px solid var(--border);
     }
     #inline-compose .btn-row {
       justify-content: flex-start;
@@ -213,6 +211,7 @@
       border-bottom: 1px solid var(--border);
       padding: 0.9rem 0;
     }
+    .post:last-child { border-bottom: none; }
     .post-header {
       display: flex;
       justify-content: space-between;
@@ -241,8 +240,9 @@
     .profile-actions { display: flex; gap: 0.5rem; }
     .profile-name   { font-size: 1.2rem; font-weight: 400; }
     .profile-wallet { font-family: var(--mono); font-size: 0.7rem; opacity: 0.4; margin: 0.2rem 0 0.6rem; }
-    .profile-bio    { font-size: 0.95rem; opacity: 0.75; margin-bottom: 1.25rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border); }
+    .profile-bio    { font-size: 0.95rem; opacity: 0.75; padding-bottom: 1rem; }
     .profile-post   { border-bottom: 1px solid var(--border); padding: 0.75rem 0; font-size: 0.95rem; line-height: 1.5; }
+    .profile-post:last-child { border-bottom: none; }
     .profile-post-time { font-family: var(--mono); font-size: 0.7rem; opacity: 0.35; margin-top: 0.3rem; }
 
     /* ── Toast (Stackable, bottom center) ─────────────────── */
@@ -396,6 +396,12 @@
         </svg>
       </button>
 
+      <button class="icon-btn" onclick="openInfoModal()" title="About Project" aria-label="About Project">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>
+        </svg>
+      </button>
+
       <button class="icon-btn" id="wallet-btn" onclick="connectWallet()" title="Connect Wallet" aria-label="Account">
         <svg id="icon-wallet" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
           <path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"/>
@@ -503,18 +509,50 @@
     </div>
     <div class="section-label">Select your architecture</div>
     <div class="btn-row" style="flex-direction: column; align-items: stretch; gap: 0.5rem;">
-      <a href="/downloads/chainboard-client-windows-aarch64.exe" download style="text-decoration: none; display: block;">
-        <button class="btn" style="width: 100%;">Windows (aarch64)</button>
+      <a href="/downloads/chainboard-client-windows-arm64.exe" download style="text-decoration: none; display: block;">
+        <button class="btn" style="width: 100%;">Windows (arm64)</button>
       </a>
-      <a href="/downloads/chainboard-client-windows-x86_64.exe" download style="text-decoration: none; display: block;">
-        <button class="btn" style="width: 100%;">Windows (aarch64)</button>
+      <a href="/downloads/chainboard-client-windows-x86.exe" download style="text-decoration: none; display: block;">
+        <button class="btn" style="width: 100%;">Windows (x86)</button>
       </a>
-      <a href="/downloads/chainboard-client-linux-x86_64.exe" download style="text-decoration: none; display: block;">
-        <button class="btn" style="width: 100%;">Windows (aarch64)</button>
+      <a href="/downloads/chainboard-client-windows-x64.exe" download style="text-decoration: none; display: block;">
+        <button class="btn" style="width: 100%;">Windows (x64)</button>
       </a>
-      <a href="/downloads/chainboard-client-macOS.exe" download style="text-decoration: none; display: block;">
-        <button class="btn" style="width: 100%;">Windows (aarch64)</button>
+      <a href="/downloads/chainboard-client-macOS-x64.exe" download style="text-decoration: none; display: block;">
+        <button class="btn" style="width: 100%;">macOS (x64)</button>
       </a>
+      <a href="/downloads/chainboard-client-macOS-arm64.exe" download style="text-decoration: none; display: block;">
+        <button class="btn" style="width: 100%;">macOS (arm64)</button>
+      </a>
+      <a href="/downloads/chainboard-client-linux-x86.exe" download style="text-decoration: none; display: block;">
+        <button class="btn" style="width: 100%;">Linux (x86)</button>
+      </a>
+      <a href="/downloads/chainboard-client-linux-x64.exe" download style="text-decoration: none; display: block;">
+        <button class="btn" style="width: 100%;">Linux (x64)</button>
+      </a>
+      <a href="/downloads/chainboard-client-linux-arm64.exe" download style="text-decoration: none; display: block;">
+        <button class="btn" style="width: 100%;">Linux (arm64)</button>
+      </a>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="info-overlay">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 class="modal-title">About Chainboard</h2>
+      <button class="modal-close" onclick="closeInfoModal()" aria-label="Close">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+        </svg>
+      </button>
+    </div>
+    <div style="font-size: 0.95rem; line-height: 1.5; opacity: 0.85;">
+      <p>Chainboard is a decentralized message board. All posts and interactions are stored permanently on-chain.</p>
+      <p>Connect your MetaMask wallet to create a profile, publish posts, and interact with the community. We also
+      offer a executable that runs the webpage locally. There's a reason it's an executable and not a plain HTML,
+      but it's too long to write here. No it won't give you a virus.</p>
+      <p>Made in 7 hours for the Algo Hack Spark 26 event by Benjamin MacLeod, Vincent Welbourne, & Yassine Amraoui.</p>
     </div>
   </div>
 </div>
@@ -810,6 +848,14 @@
     document.getElementById("download-overlay").classList.remove("open");
   }
 
+  function openInfoModal() {
+    document.getElementById("info-overlay").classList.add("open");
+  }
+
+  function closeInfoModal() {
+    document.getElementById("info-overlay").classList.remove("open");
+  }
+
   async function openProfileModal(address) {
     document.getElementById("profile-overlay").classList.add("open");
     document.getElementById("prof-wallet").textContent = address;
@@ -876,7 +922,11 @@
     if (!contract) return showToast("Connect wallet first.", "error");
     const content = document.getElementById("post-content").value.trim();
     if (!content) return showToast("Post cannot be empty.", "error");
+
+    const btn = document.querySelector("#inline-compose .btn.primary");
+    btn.disabled = true;
     const t = showToast("Publishing post...");
+
     try {
       const tx = await contract.createPost(content);
       await tx.wait();
@@ -885,7 +935,12 @@
       document.getElementById("gas-estimate").textContent = "";
       t.dismiss();
       showToast("Posted.", "success");
-    } catch(e) { t.dismiss(); showToast(e.reason || e.message, "error"); }
+    } catch(e) { 
+      t.dismiss(); 
+      showToast(e.reason || e.message, "error"); 
+    } finally {
+      btn.disabled = false;
+    }
   }
 
   async function deletePost(id) {
@@ -902,11 +957,15 @@
   async function toggleLike(id, btn) {
     if (!contract) return;
     const liked = btn.classList.contains("liked");
+    const t = showToast(liked ? "Unliking post..." : "Liking post...");
     try {
       btn.disabled = true;
       const tx = liked ? await contract.unlikePost(id) : await contract.likePost(id);
       await tx.wait();
+      t.dismiss();
+      showToast(liked ? "Unliked." : "Liked.", "success");
     } catch(e) {
+      if(t) t.dismiss();
       showToast(e.reason || e.message, "error");
     } finally {
       btn.disabled = false;
@@ -919,7 +978,8 @@
     try {
       const [count, liked] = await contract.getLikes(id);
       btn.classList.toggle("liked", liked);
-      btn.querySelector(".like-count").textContent = count.toString();
+      // Replace the inner HTML to swap the SVG icon
+      btn.innerHTML = `${liked ? SVG_HEART_FILLED : SVG_HEART_EMPTY} <span class="like-count">${count > 0 ? count : ""}</span>`;
     } catch(_) {}
   }
 
@@ -1084,6 +1144,9 @@
   document.getElementById("download-overlay").addEventListener("click", function(e) {
     if (e.target === this) closeDownloadModal();
   }); });
+  document.getElementById("info-overlay").addEventListener("click", function(e) {
+    if (e.target === this) closeInfoModal();
+  });
 
   (async () => {
     if (!window.ethereum) return;
