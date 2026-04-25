@@ -78,6 +78,24 @@
     .btn.ghost:hover { opacity: 1; background: none; }
     .btn:disabled { opacity: 0.35; cursor: not-allowed; pointer-events: none; }
 
+    /* ── Icon buttons (theme, refresh) ─────────────────────── */
+    .icon-btn {
+      background: none;
+      border: none;
+      color: var(--fg);
+      opacity: 0.45;
+      cursor: pointer;
+      padding: 0.2rem;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      -webkit-tap-highlight-color: transparent;
+      transition: opacity 0.15s;
+    }
+    .icon-btn:hover { opacity: 1; }
+    .icon-btn svg { display: block; }
+
+    /* ── Overlay / Modal ──────────────────────────────────── */
     .overlay {
       display: none;
       position: fixed;
@@ -109,18 +127,21 @@
 
     .modal-close {
       position: absolute;
-      top: 1rem;
-      right: 1rem;
-      font-family: var(--mono);
-      font-size: 0.75rem;
-      opacity: 0.4;
+      top: 0.85rem;
+      right: 0.85rem;
       background: none;
       border: none;
       color: var(--fg);
+      opacity: 0.4;
       cursor: pointer;
-      padding: 0;
+      padding: 0.2rem;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      line-height: 1;
     }
     .modal-close:hover { opacity: 1; }
+    .modal-close svg { display: block; }
 
     .wrap { max-width: var(--max); margin: 0 auto; }
 
@@ -142,19 +163,7 @@
       cursor: default;
       user-select: none;
     }
-    .header-actions { display: flex; gap: 0.5rem; align-items: center; }
-
-    .theme-btn {
-      font-family: var(--mono);
-      font-size: 0.75rem;
-      background: none;
-      border: none;
-      color: var(--fg);
-      opacity: 0.4;
-      cursor: pointer;
-      padding: 0;
-    }
-    .theme-btn:hover { opacity: 1; }
+    .header-actions { display: flex; gap: 0.6rem; align-items: center; }
 
     .section-label {
       font-family: var(--mono);
@@ -173,8 +182,19 @@
     }
     .btn-row { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.75rem; }
 
-    #post-section { margin-bottom: 2rem; display: none; }
+    /* ── New Post floating button ─────────────────────────── */
+    #new-post-btn {
+      font-family: var(--font);
+      font-weight: 200;
+      font-size: 0.9rem;
+    }
 
+    /* ── Post compose overlay ─────────────────────────────── */
+    #compose-overlay .modal {
+      max-width: 480px;
+    }
+
+    /* ── Feed header ──────────────────────────────────────── */
     .feed-header {
       display: flex;
       justify-content: space-between;
@@ -182,6 +202,7 @@
       margin-bottom: 0;
     }
 
+    /* ── Posts ────────────────────────────────────────────── */
     .post {
       border-bottom: 1px solid var(--border);
       padding: 0.9rem 0;
@@ -210,7 +231,6 @@
     .post-author:hover { opacity: 1; }
     .post-time   { font-family: var(--mono); font-size: 0.7rem; opacity: 0.35; }
     .post-body   { font-size: 1rem; line-height: 1.55; }
-    .post-delete { margin-top: 0.4rem; }
 
     .profile-name   { font-size: 1.2rem; font-weight: 400; }
     .profile-wallet { font-family: var(--mono); font-size: 0.7rem; opacity: 0.4; margin: 0.2rem 0 0.6rem; }
@@ -219,40 +239,83 @@
     .profile-post:first-of-type { border-top: 1px solid var(--border); }
     .profile-post-time { font-family: var(--mono); font-size: 0.7rem; opacity: 0.35; margin-top: 0.3rem; }
 
-    #status {
-      font-family: var(--mono);
-      font-size: 0.75rem;
-      opacity: 0.5;
-      min-height: 1.4rem;
-      margin-bottom: 0.5rem;
+    /* ── Toast / Task popup ───────────────────────────────── */
+    #toast-container {
+      position: fixed;
+      bottom: 1.25rem;
+      right: 1.25rem;
+      z-index: 9999;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      pointer-events: none;
     }
-    #status.error   { color: #c0392b; opacity: 1; }
-    #status.success { color: #27ae60; opacity: 1; }
+    .toast {
+      font-family: var(--mono);
+      font-size: 0.72rem;
+      background: var(--bg);
+      color: var(--fg);
+      border: 1px solid var(--border);
+      padding: 0.5rem 0.75rem;
+      display: flex;
+      align-items: center;
+      gap: 0.55rem;
+      min-width: 200px;
+      max-width: 320px;
+      pointer-events: auto;
+      opacity: 1;
+      transition: opacity 0.4s;
+    }
+    .toast.fade-out { opacity: 0; }
+    .toast.error { border-color: #c0392b; color: #c0392b; }
+    .toast.success { border-color: #27ae60; color: #27ae60; }
+    .toast-spinner {
+      width: 13px;
+      height: 13px;
+      border: 1.5px solid currentColor;
+      border-top-color: transparent;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      flex-shrink: 0;
+    }
+    .toast.error .toast-spinner,
+    .toast.success .toast-spinner { display: none; }
+    .toast-icon { flex-shrink: 0; display: none; }
+    .toast.error .toast-icon,
+    .toast.success .toast-icon { display: block; }
+    @keyframes spin { to { transform: rotate(360deg); } }
 
     .empty { opacity: 0.35; font-size: 0.9rem; padding: 0.75rem 0; }
 
-    /* ── Post actions (likes + reply) ─────────────────────────────── */
+    /* ── Post actions ─────────────────────────────────────── */
     .post-actions {
       display: flex;
       align-items: center;
-      gap: 0.6rem;
+      gap: 0.8rem;
       margin-top: 0.5rem;
       flex-wrap: wrap;
     }
-    .btn-like, .btn-reply {
+    .btn-like, .btn-reply, .btn-delete {
       font-family: var(--mono);
       font-size: 0.72rem;
       background: none;
       border: none;
       color: var(--fg);
-      opacity: 0.45;
+      opacity: 0.4;
       cursor: pointer;
       padding: 0;
       user-select: none;
       transition: opacity 0.15s;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+      -webkit-tap-highlight-color: transparent;
     }
     .btn-like:hover, .btn-reply:hover { opacity: 1; }
+    .btn-delete { opacity: 0.35; }
+    .btn-delete:hover { opacity: 1; color: #c0392b; }
     .btn-like.liked { opacity: 1; color: #c0392b; }
+    .btn-like svg, .btn-reply svg, .btn-delete svg { display: block; }
 
     .reply-area {
       margin-top: 0.6rem;
@@ -278,6 +341,18 @@
       margin-bottom: 0.15rem;
     }
     .reply-body { font-size: 0.9rem; line-height: 1.45; }
+
+    /* ── No-wallet feed notice ────────────────────────────── */
+    .no-wallet-notice {
+      font-family: var(--mono);
+      font-size: 0.72rem;
+      opacity: 0.45;
+      padding: 0.6rem 0 0.9rem;
+      display: flex;
+      align-items: center;
+      gap: 0.45rem;
+    }
+    .no-wallet-notice svg { opacity: 0.7; flex-shrink: 0; }
   </style>
 </head>
 
@@ -291,75 +366,121 @@
   <header>
     <h1 id="site-title">Chainboard</h1>
     <div class="header-actions">
-      <button class="btn" id="wallet-btn" onclick="connectWallet()">connect wallet</button>
-      <button class="theme-btn" onclick="toggleTheme()" id="theme-btn">dark</button>
+      <button class="btn" id="wallet-btn" onclick="connectWallet()">Connect Wallet</button>
+      <button id="new-post-btn" class="btn" onclick="openComposeModal()" style="display:none">New Post</button>
+      <!-- Dark mode icon button -->
+      <button class="icon-btn" onclick="toggleTheme()" id="theme-btn" title="Toggle dark mode" aria-label="Toggle dark mode">
+        <!-- sun icon (shown in dark mode) -->
+        <svg id="icon-sun" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:none">
+          <circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/>
+          <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+          <line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/>
+          <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+        </svg>
+        <!-- moon icon (shown in light mode) -->
+        <svg id="icon-moon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+        </svg>
+      </button>
     </div>
   </header>
-
-  <div id="status"></div>
-
-  <section id="post-section">
-    <div class="section-label">new post</div>
-    <div class="form-group">
-      <textarea id="post-content" placeholder="What's on your mind?" maxlength="280" oninput="estimatePostCost()"></textarea>
-    </div>
-    <div class="btn-row">
-      <button class="btn primary" onclick="createPost()">post</button>
-    </div>
-    <div id="gas-estimate"></div>
-  </section>
 
   <section>
     <div class="feed-header">
       <div class="section-label" style="margin:0">Feed</div>
-      <button class="btn ghost" onclick="loadFeed()">refresh</button>
+      <button class="icon-btn" onclick="loadFeed()" title="Refresh feed" aria-label="Refresh feed">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/>
+          <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+        </svg>
+      </button>
     </div>
-    <div id="feed"><p class="empty">connect your wallet to load the feed.</p></div>
+    <div id="feed">
+      <div class="no-wallet-notice">
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/>
+        </svg>
+        Connect your wallet to load the feed.
+      </div>
+    </div>
   </section>
 </div>
 
+<!-- Toast container -->
+<div id="toast-container"></div>
+
+<!-- New Post compose modal -->
+<div class="overlay" id="compose-overlay">
+  <div class="modal">
+    <button class="modal-close" onclick="closeComposeModal()" aria-label="Close">
+      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+      </svg>
+    </button>
+    <div class="modal-title">New Post</div>
+    <div class="form-group">
+      <textarea id="post-content" placeholder="What's on your mind?" maxlength="280" oninput="estimatePostCost()"></textarea>
+    </div>
+    <div class="btn-row">
+      <button class="btn primary" onclick="createPost()">Post</button>
+      <button class="btn" onclick="closeComposeModal()">Cancel</button>
+    </div>
+    <div id="gas-estimate" style="font-family:var(--mono);font-size:0.68rem;opacity:0.4;margin-top:0.5rem;"></div>
+  </div>
+</div>
+
+<!-- Account modal -->
 <div class="overlay" id="account-overlay">
   <div class="modal">
-    <button class="modal-close" id="account-close" onclick="closeAccountModal()" style="display:none">close</button>
-    <div class="modal-title" id="account-modal-title">create account</div>
+    <button class="modal-close" id="account-close" onclick="closeAccountModal()" style="display:none" aria-label="Close">
+      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+      </svg>
+    </button>
+    <div class="modal-title" id="account-modal-title">Create Account</div>
 
     <div id="account-view" style="display:none">
       <div class="profile-name" id="av-name"></div>
       <div class="profile-wallet" id="av-wallet"></div>
       <div class="profile-bio" id="av-bio"></div>
       <div class="btn-row" style="margin-bottom:1.25rem">
-        <button class="btn" onclick="switchToEditMode()">edit account</button>
-        <button class="btn danger" onclick="deleteAccount()">delete account</button>
+        <button class="btn" onclick="switchToEditMode()">Edit Account</button>
+        <button class="btn danger" onclick="deleteAccount()">Delete Account</button>
       </div>
-      <div class="section-label">your posts</div>
-      <div id="av-posts"><p class="empty">loading...</p></div>
+      <div class="section-label">Your Posts</div>
+      <div id="av-posts"><p class="empty">Loading...</p></div>
     </div>
 
     <div id="account-form">
       <div class="form-group">
-        <label>name</label>
+        <label>Name</label>
         <input type="text" id="reg-name" placeholder="Your Name" maxlength="50"/>
       </div>
       <div class="form-group">
-        <label>bio</label>
+        <label>Bio</label>
         <input type="text" id="reg-bio" placeholder="A line (or two) about you" />
       </div>
       <div class="btn-row">
-        <button class="btn primary" id="reg-btn" onclick="submitAccount()">create account</button>
-        <button class="btn" id="reg-cancel" style="display:none" onclick="switchToViewMode()">cancel</button>
+        <button class="btn primary" id="reg-btn" onclick="submitAccount()">Create Account</button>
+        <button class="btn" id="reg-cancel" style="display:none" onclick="switchToViewMode()">Cancel</button>
       </div>
     </div>
   </div>
 </div>
 
+<!-- Profile modal -->
 <div class="overlay" id="profile-overlay">
   <div class="modal">
-    <button class="modal-close" onclick="closeProfileModal()">close</button>
+    <button class="modal-close" onclick="closeProfileModal()" aria-label="Close">
+      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+      </svg>
+    </button>
     <div class="profile-name" id="prof-name"></div>
     <div class="profile-wallet" id="prof-wallet"></div>
     <div class="profile-bio" id="prof-bio"></div>
-    <div class="section-label">posts</div>
-    <div id="prof-posts"><p class="empty">loading...</p></div>
+    <div class="section-label">Posts</div>
+    <div id="prof-posts"><p class="empty">Loading...</p></div>
   </div>
 </div>
 
@@ -413,21 +534,52 @@
     }
   }
 
-  // ── Wallet ─────────────────────────────────────────────────────────────────
-  function setStatus(msg, type = "") {
-    const el = document.getElementById("status");
-    el.textContent = msg;
-    el.className = type;
+  // ── Toast notifications ─────────────────────────────────────────────────────
+  function showToast(msg, type = "", autoDismiss = false) {
+    const container = document.getElementById("toast-container");
+    const toast = document.createElement("div");
+    toast.className = "toast" + (type ? " " + type : "");
+
+    const spinner = document.createElement("div");
+    spinner.className = "toast-spinner";
+
+    const icon = document.createElement("span");
+    icon.className = "toast-icon";
+    if (type === "success") {
+      icon.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`;
+    } else if (type === "error") {
+      icon.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>`;
+    }
+
+    const text = document.createElement("span");
+    text.textContent = msg;
+
+    toast.appendChild(spinner);
+    toast.appendChild(icon);
+    toast.appendChild(text);
+    container.appendChild(toast);
+
+    const dismiss = () => {
+      toast.classList.add("fade-out");
+      setTimeout(() => toast.remove(), 450);
+    };
+
+    if (autoDismiss || type === "success" || type === "error") {
+      setTimeout(dismiss, type ? 3500 : 8000);
+    }
+
+    return { el: toast, dismiss };
   }
 
+  // ── Wallet ──────────────────────────────────────────────────────────────────
   async function connectWallet() {
-    if (!window.ethereum) return setStatus("metamask not found.", "error");
+    if (!window.ethereum) return showToast("MetaMask not found.", "error");
     try {
       provider  = new ethers.BrowserProvider(window.ethereum);
       signer    = await provider.getSigner();
       contract  = new ethers.Contract(CONTRACT_ADDRESS, ABI, signer);
       myAddress = await signer.getAddress();
-      setStatus("wallet connected.", "success");
+      showToast("Wallet connected.", "success");
 
       contract.removeAllListeners();
       const seenEvents = new Set();
@@ -468,7 +620,7 @@
       window.ethereum.on("accountsChanged", () => location.reload());
 
       await checkAccount();
-    } catch(e) { setStatus(e.message, "error"); }
+    } catch(e) { showToast(e.message, "error"); }
   }
 
   async function checkAccount() {
@@ -479,7 +631,7 @@
       const btn = document.getElementById("wallet-btn");
       btn.textContent = name;
       btn.onclick = () => openAccountModal(true);
-      document.getElementById("post-section").style.display = "block";
+      document.getElementById("new-post-btn").style.display = "inline-block";
       await loadFeed();
     } catch(e) {
       hasAccount = false;
@@ -487,7 +639,16 @@
     }
   }
 
-  // ── Account modal ──────────────────────────────────────────────────────────
+  // ── Compose modal ───────────────────────────────────────────────────────────
+  function openComposeModal() {
+    document.getElementById("compose-overlay").classList.add("open");
+    setTimeout(() => document.getElementById("post-content").focus(), 50);
+  }
+  function closeComposeModal() {
+    document.getElementById("compose-overlay").classList.remove("open");
+  }
+
+  // ── Account modal ───────────────────────────────────────────────────────────
   function openAccountModal(canClose) {
     document.getElementById("account-overlay").classList.add("open");
     document.getElementById("account-close").style.display = canClose ? "block" : "none";
@@ -501,7 +662,7 @@
   }
 
   function showAccountView() {
-    document.getElementById("account-modal-title").textContent = "your account";
+    document.getElementById("account-modal-title").textContent = "Your Account";
     document.getElementById("account-view").style.display = "block";
     document.getElementById("account-form").style.display = "none";
     const cached = accountCache.get(myAddress.toLowerCase());
@@ -521,11 +682,11 @@
 
   async function loadAccountPosts() {
     const container = document.getElementById("av-posts");
-    container.innerHTML = '<p class="empty">loading...</p>';
+    container.innerHTML = '<p class="empty">Loading...</p>';
     try {
       const [ids, contents, , timestamps] = await contract.getPostsByAuthor(myAddress, 50, 0);
       container.innerHTML = "";
-      if (ids.length === 0) { container.innerHTML = '<p class="empty">no posts yet.</p>'; return; }
+      if (ids.length === 0) { container.innerHTML = '<p class="empty">No posts yet.</p>'; return; }
       for (let i = 0; i < ids.length; i++) {
         const date = new Date(Number(timestamps[i]) * 1000).toLocaleDateString("en-CA", {
           month: "short", day: "numeric", year: "numeric"
@@ -535,14 +696,14 @@
         el.innerHTML = `${esc(contents[i])}<div class="profile-post-time">${date}</div>`;
         container.appendChild(el);
       }
-    } catch(_) { container.innerHTML = '<p class="empty">could not load posts.</p>'; }
+    } catch(_) { container.innerHTML = '<p class="empty">Could not load posts.</p>'; }
   }
 
   function showAccountForm() {
-    document.getElementById("account-modal-title").textContent = editing ? "edit account" : "create account";
+    document.getElementById("account-modal-title").textContent = editing ? "Edit Account" : "Create Account";
     document.getElementById("account-view").style.display = "none";
     document.getElementById("account-form").style.display = "block";
-    document.getElementById("reg-btn").textContent = editing ? "save changes" : "create account";
+    document.getElementById("reg-btn").textContent = editing ? "Save Changes" : "Create Account";
     document.getElementById("reg-cancel").style.display = editing ? "inline-block" : "none";
   }
 
@@ -568,59 +729,63 @@
   }
 
   async function submitAccount() {
-    if (!contract) return setStatus("connect wallet first.", "error");
+    if (!contract) return showToast("Connect wallet first.", "error");
     const name = document.getElementById("reg-name").value.trim();
     const bio  = document.getElementById("reg-bio").value.trim();
-    if (!name) return setStatus("name is required.", "error");
+    if (!name) return showToast("Name is required.", "error");
+    const t = showToast("Sending transaction...");
     try {
-      setStatus("sending transaction...");
       const tx = editing
         ? await contract.updateAccount(name, bio)
         : await contract.createAccount(name, bio);
       await tx.wait();
-      setStatus(editing ? "account updated." : "account created.", "success");
+      t.dismiss();
+      showToast(editing ? "Account updated." : "Account created.", "success");
       accountCache.set(myAddress.toLowerCase(), { name, bio });
       hasAccount = true;
       editing = false;
       const btn = document.getElementById("wallet-btn");
       btn.textContent = name;
       btn.onclick = () => openAccountModal(true);
-      document.getElementById("post-section").style.display = "block";
+      document.getElementById("new-post-btn").style.display = "inline-block";
       document.getElementById("account-close").style.display = "block";
       closeAccountModal();
-    } catch(e) { setStatus(e.reason || e.message, "error"); }
+      // Load feed immediately after account creation
+      await loadFeed();
+    } catch(e) { t.dismiss(); showToast(e.reason || e.message, "error"); }
   }
 
   async function deleteAccount() {
-    if (!confirm("delete your account? your posts will remain on-chain.")) return;
+    if (!confirm("Delete your account? Your posts will remain on-chain.")) return;
+    const t = showToast("Sending transaction...");
     try {
-      setStatus("sending transaction...");
       const tx = await contract.deleteAccount();
       await tx.wait();
+      t.dismiss();
       hasAccount = false;
       accountCache.delete(myAddress.toLowerCase());
-      setStatus("account deleted.", "success");
+      showToast("Account deleted.", "success");
       const btn = document.getElementById("wallet-btn");
       btn.textContent = myAddress.slice(0,6) + "..." + myAddress.slice(-4);
       btn.onclick = connectWallet;
-      document.getElementById("post-section").style.display = "none";
+      document.getElementById("new-post-btn").style.display = "none";
       closeAccountModal();
       openAccountModal(false);
-    } catch(e) { setStatus(e.reason || e.message, "error"); }
+    } catch(e) { t.dismiss(); showToast(e.reason || e.message, "error"); }
   }
 
-  // ── Profile modal ──────────────────────────────────────────────────────────
+  // ── Profile modal ───────────────────────────────────────────────────────────
   async function openProfileModal(address) {
     document.getElementById("profile-overlay").classList.add("open");
     document.getElementById("prof-wallet").textContent = address;
-    document.getElementById("prof-posts").innerHTML = '<p class="empty">loading...</p>';
+    document.getElementById("prof-posts").innerHTML = '<p class="empty">Loading...</p>';
 
     const cached = accountCache.get(address.toLowerCase());
     if (cached) {
       document.getElementById("prof-name").textContent = cached.name;
       document.getElementById("prof-bio").textContent  = cached.bio;
     } else {
-      document.getElementById("prof-name").textContent = "loading...";
+      document.getElementById("prof-name").textContent = "Loading...";
       document.getElementById("prof-bio").textContent  = "";
       try {
         const [name, bio] = await contract.getAccount(address);
@@ -629,7 +794,7 @@
         document.getElementById("prof-bio").textContent  = bio;
       } catch(_) {
         document.getElementById("prof-name").textContent = address.slice(0,6) + "..." + address.slice(-4);
-        document.getElementById("prof-bio").textContent  = "no account registered.";
+        document.getElementById("prof-bio").textContent  = "No account registered.";
       }
     }
 
@@ -638,7 +803,7 @@
       const container = document.getElementById("prof-posts");
       container.innerHTML = "";
       if (ids.length === 0) {
-        container.innerHTML = '<p class="empty">no posts yet.</p>';
+        container.innerHTML = '<p class="empty">No posts yet.</p>';
         return;
       }
       for (let i = 0; i < ids.length; i++) {
@@ -651,7 +816,7 @@
         container.appendChild(el);
       }
     } catch(e) {
-      document.getElementById("prof-posts").innerHTML = '<p class="empty">could not load posts.</p>';
+      document.getElementById("prof-posts").innerHTML = '<p class="empty">Could not load posts.</p>';
     }
   }
 
@@ -659,7 +824,7 @@
     document.getElementById("profile-overlay").classList.remove("open");
   }
 
-  // ── Posts & Feed ───────────────────────────────────────────────────────────
+  // ── Posts & Feed ────────────────────────────────────────────────────────────
   async function estimatePostCost() {
     if (!contract || !provider) return;
     const content = document.getElementById("post-content").value;
@@ -669,37 +834,40 @@
       const gasLimit = await contract.createPost.estimateGas(content);
       const feeData  = await provider.getFeeData();
       const costEth  = ethers.formatEther(gasLimit * feeData.gasPrice);
-      el.textContent = `est. gas: ~${Number(costEth).toFixed(5)} ETH`;
+      el.textContent = `Est. gas: ~${Number(costEth).toFixed(5)} ETH`;
     } catch(_) { el.textContent = ""; }
   }
 
   async function createPost() {
-    if (!contract) return setStatus("connect wallet first.", "error");
+    if (!contract) return showToast("Connect wallet first.", "error");
     const content = document.getElementById("post-content").value.trim();
-    if (!content) return setStatus("post cannot be empty.", "error");
+    if (!content) return showToast("Post cannot be empty.", "error");
+    const t = showToast("Sending transaction...");
     try {
-      setStatus("sending transaction...");
       const tx = await contract.createPost(content);
       await tx.wait();
       document.getElementById("post-content").value = "";
       document.getElementById("gas-estimate").textContent = "";
-      setStatus("posted.", "success");
+      t.dismiss();
+      showToast("Posted.", "success");
+      closeComposeModal();
       // feed updates via PostCreated event
-    } catch(e) { setStatus(e.reason || e.message, "error"); }
+    } catch(e) { t.dismiss(); showToast(e.reason || e.message, "error"); }
   }
 
   async function deletePost(id) {
-    if (!confirm("delete this post?")) return;
+    if (!confirm("Delete this post?")) return;
+    const t = showToast("Sending transaction...");
     try {
-      setStatus("sending transaction...");
       const tx = await contract.deletePost(id);
       await tx.wait();
-      setStatus("post deleted.", "success");
+      t.dismiss();
+      showToast("Post deleted.", "success");
       // feed updates via PostDeleted event
-    } catch(e) { setStatus(e.reason || e.message, "error"); }
+    } catch(e) { t.dismiss(); showToast(e.reason || e.message, "error"); }
   }
 
-  // ── Likes ──────────────────────────────────────────────────────────────────
+  // ── Likes ───────────────────────────────────────────────────────────────────
   async function toggleLike(id, btn) {
     if (!contract) return;
     const liked = btn.classList.contains("liked");
@@ -709,7 +877,7 @@
       await tx.wait();
       // UI updates via PostLiked/PostUnliked event
     } catch(e) {
-      setStatus(e.reason || e.message, "error");
+      showToast(e.reason || e.message, "error");
     } finally {
       btn.disabled = false;
     }
@@ -721,11 +889,11 @@
     try {
       const [count, liked] = await contract.getLikes(id);
       btn.classList.toggle("liked", liked);
-      btn.querySelector("span").textContent = count.toString();
+      btn.querySelector(".like-count").textContent = count.toString();
     } catch(_) {}
   }
 
-  // ── Replies ────────────────────────────────────────────────────────────────
+  // ── Replies ─────────────────────────────────────────────────────────────────
   function toggleReply(id, btn) {
     const area = document.getElementById(`reply-area-${id}`);
     const open = area.style.display === "block";
@@ -739,17 +907,19 @@
     const textarea = area.querySelector("textarea");
     const text    = textarea.value.trim();
     if (!text) return;
+    const t = showToast("Sending transaction...");
     try {
       btn.disabled = true;
-      setStatus("sending transaction...");
       const tx = await contract.createReply(id, text);
       await tx.wait();
       textarea.value = "";
       area.style.display = "none";
-      setStatus("reply posted.", "success");
+      t.dismiss();
+      showToast("Reply posted.", "success");
       // UI updates via ReplyCreated event
     } catch(e) {
-      setStatus(e.reason || e.message, "error");
+      t.dismiss();
+      showToast(e.reason || e.message, "error");
     } finally {
       btn.disabled = false;
     }
@@ -765,10 +935,10 @@
     el.innerHTML = `<div class="reply-meta">${esc(authorLabel)}</div><div class="reply-body">${esc(content)}</div>`;
     container.appendChild(el);
     // update reply count on button
-    const replyBtn = document.querySelector(`.post[data-id="${postId}"] .btn-reply`);
+    const replyBtn = document.querySelector(`.post[data-id="${postId}"] .btn-reply .reply-count`);
     if (replyBtn) {
       const count = container.children.length;
-      replyBtn.textContent = count > 0 ? `reply (${count})` : "reply";
+      replyBtn.textContent = count > 0 ? count : "";
     }
   }
 
@@ -784,7 +954,13 @@
     } catch(_) {}
   }
 
-  // ── Shared post element builder ────────────────────────────────────────────
+  // SVG icons ─────────────────────────────────────────────────────────────────
+  const SVG_HEART_EMPTY = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>`;
+  const SVG_HEART_FILLED = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>`;
+  const SVG_REPLY = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 17 4 12 9 7"/><path d="M20 18v-2a4 4 0 0 0-4-4H4"/></svg>`;
+  const SVG_TRASH = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>`;
+
+  // ── Shared post element builder ─────────────────────────────────────────────
   async function buildPostEl(id, authorAddr, authorLabel, content, timestamp) {
     const date  = new Date(timestamp * 1000).toLocaleDateString("en-CA", {
       month: "short", day: "numeric", year: "numeric"
@@ -808,15 +984,21 @@
       </div>
       <div class="post-body">${esc(content)}</div>
       <div class="post-actions">
-        <button class="btn-like${liked ? " liked" : ""}" onclick="toggleLike(${id}, this)">♥ <span>${likeCount}</span></button>
-        <button class="btn-reply" onclick="toggleReply(${id}, this)">reply</button>
-        ${isOwn ? `<button class="btn danger" style="font-size:0.75rem;padding:0.15em 0.6em" onclick="deletePost(${id})">delete</button>` : ""}
+        <button class="btn-like${liked ? " liked" : ""}" onclick="toggleLike(${id}, this)" title="${liked ? "Unlike" : "Like"}">
+          ${liked ? SVG_HEART_FILLED : SVG_HEART_EMPTY}
+          <span class="like-count">${likeCount > 0 ? likeCount : ""}</span>
+        </button>
+        <button class="btn-reply" onclick="toggleReply(${id}, this)" title="Reply">
+          ${SVG_REPLY}
+          <span class="reply-count"></span>
+        </button>
+        ${isOwn ? `<button class="btn-delete" onclick="deletePost(${id})" title="Delete post">${SVG_TRASH}</button>` : ""}
       </div>
       <div class="reply-area" id="reply-area-${id}">
-        <textarea placeholder="your reply..."></textarea>
+        <textarea placeholder="Your reply..."></textarea>
         <div class="btn-row">
-          <button class="btn primary" onclick="submitReply(${id}, this)">reply</button>
-          <button class="btn" onclick="toggleReply(${id}, this)">cancel</button>
+          <button class="btn primary" onclick="submitReply(${id}, this)">Reply</button>
+          <button class="btn" onclick="toggleReply(${id}, this)">Cancel</button>
         </div>
       </div>
       <div class="replies" id="replies-${id}"></div>
@@ -829,7 +1011,7 @@
 
   async function prependPost(id, author, content, timestamp) {
     const feed = document.getElementById("feed");
-    const empty = feed.querySelector(".empty");
+    const empty = feed.querySelector(".empty, .no-wallet-notice");
     if (empty) empty.remove();
     const account     = await resolveAccount(author);
     const authorLabel = account ? account.name : author.slice(0,6) + "..." + author.slice(-4);
@@ -840,16 +1022,19 @@
     if (!contract) return;
     const feed = document.getElementById("feed");
     feed.innerHTML = "";
+    const t = showToast("Loading feed...");
     try {
       const [ids, contents, authors, timestamps] = await contract.getPostsPaginated(50, 0);
-      if (ids.length === 0) { feed.innerHTML = '<p class="empty">no posts yet.</p>'; return; }
+      t.dismiss();
+      if (ids.length === 0) { feed.innerHTML = '<p class="empty">No posts yet.</p>'; return; }
       for (let i = 0; i < ids.length; i++) {
         const account     = await resolveAccount(authors[i]);
         const authorLabel = account ? account.name : authors[i].slice(0,6) + "..." + authors[i].slice(-4);
         feed.appendChild(await buildPostEl(Number(ids[i]), authors[i], authorLabel, contents[i], Number(timestamps[i])));
       }
     } catch(e) {
-      feed.innerHTML = '<p class="empty">could not load feed.</p>';
+      t.dismiss();
+      feed.innerHTML = '<p class="empty">Could not load feed.</p>';
       console.error(e);
     }
   }
@@ -862,7 +1047,8 @@
 
   function toggleTheme() {
     const dark = document.body.classList.toggle("dark");
-    document.getElementById("theme-btn").textContent = dark ? "light" : "dark";
+    document.getElementById("icon-sun").style.display  = dark ? "block" : "none";
+    document.getElementById("icon-moon").style.display = dark ? "none"  : "block";
   }
 
   document.getElementById("account-overlay").addEventListener("click", function(e) {
@@ -871,8 +1057,11 @@
   document.getElementById("profile-overlay").addEventListener("click", function(e) {
     if (e.target === this) closeProfileModal();
   });
+  document.getElementById("compose-overlay").addEventListener("click", function(e) {
+    if (e.target === this) closeComposeModal();
+  });
 
-  // ── Auto-login ─────────────────────────────────────────────────────────────
+  // ── Auto-login ──────────────────────────────────────────────────────────────
   (async () => {
     if (!window.ethereum) return;
     const accounts = await window.ethereum.request({ method: "eth_accounts" });
