@@ -449,6 +449,40 @@
 
   async function connectWallet() {
     if (!window.ethereum) return setStatus("metamask not found.", "error");
+
+    // 1. Request account access
+    const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+
+    // 2. IMMEDIATE NETWORK CHECK
+    const chainId = await window.ethereum.request({ method: 'eth_chainId' });
+    const SEPOLIA_ID = '0xaa36a7';
+
+    if (chainId !== SEPOLIA_ID) {
+        try {
+            await window.ethereum.request({
+                method: 'wallet_switchEthereumChain',
+                params: [{ chainId: SEPOLIA_ID }],
+            });
+        } catch (err) {
+            // If Sepolia isn't in their MetaMask, add it automatically
+            if (err.code === 4902) {
+                await window.ethereum.request({
+                    method: 'wallet_addEthereumChain',
+                    params: [{
+                        chainId: SEPOLIA_ID,
+                        chainName: 'Sepolia Test Network',
+                        nativeCurrency: { name: 'Sepolia ETH', symbol: 'ETH', decimals: 18 },
+                        rpcUrls: ['https://rpc.sepolia.org'],
+                        blockExplorerUrls: ['https://sepolia.etherscan.io']
+                    }]
+                });
+            } else {
+                setStatus("Please switch to Sepolia to continue.", "error");
+                return;
+            }
+        }
+    }
+
     try {
       provider  = new ethers.BrowserProvider(window.ethereum);
       signer    = await provider.getSigner();
@@ -470,12 +504,17 @@
     try {
       const [name, bio] = await contract.getAccount(myAddress);
       hasAccount = true;
+
       const btn = document.getElementById("wallet-btn");
       btn.textContent = name;
       btn.onclick = () => openAccountModal(true);
+
+      closeAccountModal(); 
+
       document.getElementById("post-section").style.display = "block";
+      setStatus("account loaded.", "success");
       await loadFeed();
-    } catch(e) { 
+    } catch(e) {
       hasAccount = false;
       openAccountModal(false);
     }
