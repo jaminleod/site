@@ -367,12 +367,15 @@
 <!-- LOGIC -->
 
 <script>
-  const CONTRACT_ADDRESS = "0xC7FDf13990B5a4145D20e6F9B3D274f55e72C5E8";
+  const CONTRACT_ADDRESS = "0xB514878679E6A102Fe72d051880AFe1a00800BD7";
   const ABI = [
     "event AccountCreated(address indexed user, string name)",
     "event AccountUpdated(address indexed user, string name)",
     "event PostCreated(uint256 indexed id, address indexed author, string content, uint256 timestamp)",
     "event PostDeleted(uint256 indexed id)",
+    "event PostLiked(uint256 indexed postId, address indexed user)",
+    "event PostUnliked(uint256 indexed postId, address indexed user)",
+    "event ReplyCreated(uint256 indexed postId, uint256 indexed replyId, address indexed author, string content, uint256 timestamp)",
     "function createAccount(string _name, string _bio) external",
     "function updateAccount(string _newName, string _newBio) external",
     "function deleteAccount() external",
@@ -382,7 +385,12 @@
     "function getPost(uint256 _id) external view returns (string content, address author, uint256 timestamp)",
     "function postCount() external view returns (uint256)",
     "function getPostsPaginated(uint256 _limit, uint256 _offset) external view returns (uint256[] ids, string[] contents, address[] authors, uint256[] timestamps)",
-    "function getPostsByAuthor(address _author) external view returns (uint256[] ids, string[] contents, address[] authors, uint256[] timestamps)",
+    "function getPostsByAuthor(address _user, uint256 _limit, uint256 _offset) external view returns (uint256[] ids, string[] contents, address[] authors, uint256[] timestamps)",
+    "function likePost(uint256 _id) external",
+    "function unlikePost(uint256 _id) external",
+    "function getLikes(uint256 _id) external view returns (uint256 count, bool liked)",
+    "function createReply(uint256 _postId, string _content) external returns (uint256)",
+    "function getReplies(uint256 _postId) external view returns (uint256[] ids, string[] contents, address[] authors, uint256[] timestamps)",
   ];
 
   let provider, signer, contract, myAddress;
@@ -391,7 +399,6 @@
 
   // ── Caches ─────────────────────────────────────────────────────────────────
   const accountCache = new Map();
-  const likeCache    = new Map(); // postId -> { count, liked }
 
   async function resolveAccount(addr) {
     const key = addr.toLowerCase();
@@ -435,6 +442,24 @@
         if (seenEvents.has(key)) return;
         seenEvents.add(key);
         document.querySelector(`.post[data-id="${id}"]`)?.remove();
+      });
+      contract.on("PostLiked", (postId, user, event) => {
+        const key = event?.log?.transactionHash ?? `like-${postId}-${user}`;
+        if (seenEvents.has(key)) return;
+        seenEvents.add(key);
+        updateLikeUI(Number(postId));
+      });
+      contract.on("PostUnliked", (postId, user, event) => {
+        const key = event?.log?.transactionHash ?? `unlike-${postId}-${user}`;
+        if (seenEvents.has(key)) return;
+        seenEvents.add(key);
+        updateLikeUI(Number(postId));
+      });
+      contract.on("ReplyCreated", (postId, replyId, author, content, timestamp, event) => {
+        const key = event?.log?.transactionHash ?? `reply-${postId}-${replyId}`;
+        if (seenEvents.has(key)) return;
+        seenEvents.add(key);
+        appendReplyToDOM(Number(postId), author, content, Number(timestamp));
       });
       contract.on("AccountUpdated", (addr) => {
         accountCache.delete(addr.toLowerCase());
@@ -498,7 +523,7 @@
     const container = document.getElementById("av-posts");
     container.innerHTML = '<p class="empty">loading...</p>';
     try {
-      const [ids, contents, , timestamps] = await contract.getPostsByAuthor(myAddress);
+      const [ids, contents, , timestamps] = await contract.getPostsByAuthor(myAddress, 50, 0);
       container.innerHTML = "";
       if (ids.length === 0) { container.innerHTML = '<p class="empty">no posts yet.</p>'; return; }
       for (let i = 0; i < ids.length; i++) {
@@ -609,7 +634,7 @@
     }
 
     try {
-      const [ids, contents, , timestamps] = await contract.getPostsByAuthor(address);
+      const [ids, contents, , timestamps] = await contract.getPostsByAuthor(address, 50, 0);
       const container = document.getElementById("prof-posts");
       container.innerHTML = "";
       if (ids.length === 0) {
@@ -674,17 +699,33 @@
     } catch(e) { setStatus(e.reason || e.message, "error"); }
   }
 
-  // ── Likes (DOM-only) ───────────────────────────────────────────────────────
-  function toggleLike(id, btn) {
-    const entry = likeCache.get(id) || { count: 0, liked: false };
-    entry.liked  = !entry.liked;
-    entry.count += entry.liked ? 1 : -1;
-    likeCache.set(id, entry);
-    btn.classList.toggle("liked", entry.liked);
-    btn.querySelector("span").textContent = entry.count;
+  // ── Likes ──────────────────────────────────────────────────────────────────
+  async function toggleLike(id, btn) {
+    if (!contract) return;
+    const liked = btn.classList.contains("liked");
+    try {
+      btn.disabled = true;
+      const tx = liked ? await contract.unlikePost(id) : await contract.likePost(id);
+      await tx.wait();
+      // UI updates via PostLiked/PostUnliked event
+    } catch(e) {
+      setStatus(e.reason || e.message, "error");
+    } finally {
+      btn.disabled = false;
+    }
   }
 
-  // ── Replies (DOM-only) ─────────────────────────────────────────────────────
+  async function updateLikeUI(id) {
+    const btn = document.querySelector(`.post[data-id="${id}"] .btn-like`);
+    if (!btn || !contract) return;
+    try {
+      const [count, liked] = await contract.getLikes(id);
+      btn.classList.toggle("liked", liked);
+      btn.querySelector("span").textContent = count.toString();
+    } catch(_) {}
+  }
+
+  // ── Replies ────────────────────────────────────────────────────────────────
   function toggleReply(id, btn) {
     const area = document.getElementById(`reply-area-${id}`);
     const open = area.style.display === "block";
@@ -693,40 +734,69 @@
   }
 
   async function submitReply(id, btn) {
-    const area     = document.getElementById(`reply-area-${id}`);
+    if (!contract) return;
+    const area    = document.getElementById(`reply-area-${id}`);
     const textarea = area.querySelector("textarea");
-    const text     = textarea.value.trim();
+    const text    = textarea.value.trim();
     if (!text) return;
+    try {
+      btn.disabled = true;
+      setStatus("sending transaction...");
+      const tx = await contract.createReply(id, text);
+      await tx.wait();
+      textarea.value = "";
+      area.style.display = "none";
+      setStatus("reply posted.", "success");
+      // UI updates via ReplyCreated event
+    } catch(e) {
+      setStatus(e.reason || e.message, "error");
+    } finally {
+      btn.disabled = false;
+    }
+  }
 
-    const account = myAddress ? await resolveAccount(myAddress) : null;
-    const label   = account ? account.name : myAddress
-      ? myAddress.slice(0,6) + "..." + myAddress.slice(-4)
-      : "anonymous";
-
-    const container = document.getElementById(`replies-${id}`);
+  async function appendReplyToDOM(postId, authorAddr, content, timestamp) {
+    const container = document.getElementById(`replies-${postId}`);
+    if (!container) return;
+    const account     = await resolveAccount(authorAddr);
+    const authorLabel = account ? account.name : authorAddr.slice(0,6) + "..." + authorAddr.slice(-4);
     const el = document.createElement("div");
     el.className = "reply-item";
-    el.innerHTML = `<div class="reply-meta">${esc(label)}</div><div class="reply-body">${esc(text)}</div>`;
+    el.innerHTML = `<div class="reply-meta">${esc(authorLabel)}</div><div class="reply-body">${esc(content)}</div>`;
     container.appendChild(el);
-
-    textarea.value = "";
-    area.style.display = "none";
-
-    // update reply count on the button
-    const replyBtn = area.previousElementSibling.querySelector(".btn-reply");
+    // update reply count on button
+    const replyBtn = document.querySelector(`.post[data-id="${postId}"] .btn-reply`);
     if (replyBtn) {
       const count = container.children.length;
       replyBtn.textContent = count > 0 ? `reply (${count})` : "reply";
     }
   }
 
+  async function loadReplies(postId) {
+    const container = document.getElementById(`replies-${postId}`);
+    if (!container || !contract) return;
+    try {
+      const [, contents, authors, timestamps] = await contract.getReplies(postId);
+      container.innerHTML = "";
+      for (let i = 0; i < contents.length; i++) {
+        await appendReplyToDOM(postId, authors[i], contents[i], Number(timestamps[i]));
+      }
+    } catch(_) {}
+  }
+
   // ── Shared post element builder ────────────────────────────────────────────
-  function buildPostEl(id, authorAddr, authorLabel, content, timestamp) {
+  async function buildPostEl(id, authorAddr, authorLabel, content, timestamp) {
     const date  = new Date(timestamp * 1000).toLocaleDateString("en-CA", {
       month: "short", day: "numeric", year: "numeric"
     });
     const isOwn = myAddress && authorAddr.toLowerCase() === myAddress.toLowerCase();
-    const likes = likeCache.get(id) || { count: 0, liked: false };
+
+    let likeCount = 0, liked = false;
+    try {
+      const result = await contract.getLikes(id);
+      likeCount = Number(result.count);
+      liked     = result.liked;
+    } catch(_) {}
 
     const el = document.createElement("div");
     el.className = "post";
@@ -738,7 +808,7 @@
       </div>
       <div class="post-body">${esc(content)}</div>
       <div class="post-actions">
-        <button class="btn-like${likes.liked ? " liked" : ""}" onclick="toggleLike(${id}, this)">♥ <span>${likes.count}</span></button>
+        <button class="btn-like${liked ? " liked" : ""}" onclick="toggleLike(${id}, this)">♥ <span>${likeCount}</span></button>
         <button class="btn-reply" onclick="toggleReply(${id}, this)">reply</button>
         ${isOwn ? `<button class="btn danger" style="font-size:0.75rem;padding:0.15em 0.6em" onclick="deletePost(${id})">delete</button>` : ""}
       </div>
@@ -751,6 +821,9 @@
       </div>
       <div class="replies" id="replies-${id}"></div>
     `;
+
+    // load existing replies async after element is built
+    setTimeout(() => loadReplies(id), 0);
     return el;
   }
 
@@ -760,7 +833,7 @@
     if (empty) empty.remove();
     const account     = await resolveAccount(author);
     const authorLabel = account ? account.name : author.slice(0,6) + "..." + author.slice(-4);
-    feed.prepend(buildPostEl(id, author, authorLabel, content, timestamp));
+    feed.prepend(await buildPostEl(id, author, authorLabel, content, timestamp));
   }
 
   async function loadFeed() {
@@ -773,7 +846,7 @@
       for (let i = 0; i < ids.length; i++) {
         const account     = await resolveAccount(authors[i]);
         const authorLabel = account ? account.name : authors[i].slice(0,6) + "..." + authors[i].slice(-4);
-        feed.appendChild(buildPostEl(Number(ids[i]), authors[i], authorLabel, contents[i], Number(timestamps[i])));
+        feed.appendChild(await buildPostEl(Number(ids[i]), authors[i], authorLabel, contents[i], Number(timestamps[i])));
       }
     } catch(e) {
       feed.innerHTML = '<p class="empty">could not load feed.</p>';
@@ -798,6 +871,13 @@
   document.getElementById("profile-overlay").addEventListener("click", function(e) {
     if (e.target === this) closeProfileModal();
   });
+
+  // ── Auto-login ─────────────────────────────────────────────────────────────
+  (async () => {
+    if (!window.ethereum) return;
+    const accounts = await window.ethereum.request({ method: "eth_accounts" });
+    if (accounts.length > 0) connectWallet();
+  })();
 </script>
 
 </body>
