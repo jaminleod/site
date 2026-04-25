@@ -367,7 +367,7 @@
 <!-- LOGIC -->
 
 <script>
-  const CONTRACT_ADDRESS = "0xC7FDf13990B5a4145D20e6F9B3D274f55e72C5E8";
+  const CONTRACT_ADDRESS = "0x69461acDf6F78b046242d94F7365bb40644c0e6F";
   const ABI = [
     "event AccountCreated(address indexed user, string name)",
     "event AccountUpdated(address indexed user, string name)",
@@ -423,10 +423,17 @@
       setStatus("wallet connected.", "success");
 
       contract.removeAllListeners();
-      contract.on("PostCreated", (id, author, content, timestamp) => {
+      const seenEvents = new Set();
+      contract.on("PostCreated", (id, author, content, timestamp, event) => {
+        const key = event?.log?.transactionHash ?? `${id}-${timestamp}`;
+        if (seenEvents.has(key)) return;
+        seenEvents.add(key);
         prependPost(Number(id), author, content, Number(timestamp));
       });
-      contract.on("PostDeleted", (id) => {
+      contract.on("PostDeleted", (id, event) => {
+        const key = event?.log?.transactionHash ?? `del-${id}`;
+        if (seenEvents.has(key)) return;
+        seenEvents.add(key);
         document.querySelector(`.post[data-id="${id}"]`)?.remove();
       });
       contract.on("AccountUpdated", (addr) => {
