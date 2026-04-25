@@ -1,0 +1,720 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Chainboard</title>
+  <script src="https://cdn.jsdelivr.net/npm/ethers@6.13.0/dist/ethers.umd.min.js"></script>
+  <style>
+    @import url("https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,200..900;1,200..900&display=swap");
+    @import url("https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,100..700;1,100..700&display=swap");
+
+    :root {
+      --bg: #fafafa;
+      --fg: #1c1c1c;
+      --border: #1c1c1c;
+      --font: "Crimson Pro", "Georgia", serif;
+      --mono: "Roboto Mono", monospace;
+      --max: 680px;
+    }
+    .dark {
+      --bg: #1a1a1a;
+      --fg: #e0e0e0;
+      --border: #e0e0e0;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; }
+    html { font-size: 18px; }
+    *::selection { color: var(--bg); background: var(--fg); }
+
+    body {
+      font-family: var(--font);
+      font-weight: 200;
+      background: var(--bg);
+      color: var(--fg);
+      margin: 0;
+      padding: 2rem 1rem;
+      transition: background 0.2s, color 0.2s;
+    }
+
+    input, textarea {
+      font-size: 1rem;
+      font-family: var(--font);
+      font-weight: 200;
+      background: none;
+      border: 1px solid var(--border);
+      color: var(--fg);
+      padding: 0.3em 0.5em;
+      width: 100%;
+      -webkit-tap-highlight-color: transparent;
+    }
+    input:focus, textarea:focus { outline: none; }
+    textarea { resize: vertical; min-height: 80px; }
+
+    .btn {
+      display: inline-block;
+      font-family: var(--font);
+      font-weight: 200;
+      font-size: 0.9rem;
+      padding: 0.3em 0.9em;
+      border: 1px solid var(--border);
+      border-radius: 0;
+      background: rgba(0,0,0,0.04);
+      color: var(--fg);
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+      transition: background 0.15s;
+    }
+    .dark .btn { background: rgba(255,255,255,0.06); }
+    .btn:hover { background: rgba(0,0,0,0.1); }
+    .dark .btn:hover { background: rgba(255,255,255,0.14); }
+    .btn:focus-visible { color: var(--bg); background: var(--fg); outline: none; }
+    .btn.primary { background: var(--fg); color: var(--bg); }
+    .btn.primary:hover { opacity: 0.8; }
+    .btn.danger { border-color: #c0392b; color: #c0392b; background: transparent; }
+    .btn.danger:hover { background: #c0392b; color: #fafafa; }
+    .btn.ghost { border: none; background: none; opacity: 0.5; font-size: 0.8rem; }
+    .btn.ghost:hover { opacity: 1; background: none; }
+    .btn:disabled { opacity: 0.35; cursor: not-allowed; pointer-events: none; }
+
+    .overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.45);
+      z-index: 100;
+      align-items: flex-start;
+      justify-content: center;
+      padding: 3rem 1rem;
+      overflow-y: auto;
+    }
+    .dark .overlay { background: rgba(0,0,0,0.65); }
+    .overlay.open { display: flex; }
+
+    .modal {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      width: 100%;
+      max-width: 520px;
+      padding: 1.5rem;
+      position: relative;
+    }
+
+    .modal-title {
+      font-size: 1.1rem;
+      font-weight: 400;
+      margin-bottom: 1.25rem;
+    }
+
+    .modal-close {
+      position: absolute;
+      top: 1rem;
+      right: 1rem;
+      font-family: var(--mono);
+      font-size: 0.75rem;
+      opacity: 0.4;
+      background: none;
+      border: none;
+      color: var(--fg);
+      cursor: pointer;
+      padding: 0;
+    }
+    .modal-close:hover { opacity: 1; }
+
+    .wrap { max-width: var(--max); margin: 0 auto; }
+
+    header {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 1rem;
+      margin-bottom: 2rem;
+    }
+    header h1 {
+      font-size: 1.6rem;
+      margin: 0;
+      font-weight: 400;
+      letter-spacing: -0.02em;
+      cursor: default;
+      user-select: none;
+    }
+    .header-actions { display: flex; gap: 0.5rem; align-items: center; }
+
+    .theme-btn {
+      font-family: var(--mono);
+      font-size: 0.75rem;
+      background: none;
+      border: none;
+      color: var(--fg);
+      opacity: 0.4;
+      cursor: pointer;
+      padding: 0;
+    }
+    .theme-btn:hover { opacity: 1; }
+
+    .section-label {
+      font-family: var(--mono);
+      font-size: 0.7rem;
+      opacity: 0.4;
+      margin-bottom: 0.75rem;
+    }
+
+    .form-group { margin-bottom: 0.65rem; }
+    .form-group label {
+      display: block;
+      font-family: var(--mono);
+      font-size: 0.72rem;
+      opacity: 0.5;
+      margin-bottom: 0.2rem;
+    }
+    .btn-row { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.75rem; }
+
+    #post-section { margin-bottom: 2rem; display: none; }
+
+    .feed-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0;
+    }
+
+    .post {
+      border-bottom: 1px solid var(--border);
+      padding: 0.9rem 0;
+    }
+    .post:first-child { border-top: 1px solid var(--border); }
+    .post-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 1rem;
+      flex-wrap: wrap;
+      margin-bottom: 0.3rem;
+    }
+    .post-author {
+      font-family: var(--mono);
+      font-size: 0.75rem;
+      opacity: 0.55;
+      background: none;
+      border: none;
+      color: var(--fg);
+      cursor: pointer;
+      padding: 0;
+      text-decoration: underline;
+      text-underline-offset: 2px;
+    }
+    .post-author:hover { opacity: 1; }
+    .post-time   { font-family: var(--mono); font-size: 0.7rem; opacity: 0.35; }
+    .post-body   { font-size: 1rem; line-height: 1.55; }
+    .post-delete { margin-top: 0.4rem; }
+
+    .profile-name   { font-size: 1.2rem; font-weight: 400; }
+    .profile-wallet { font-family: var(--mono); font-size: 0.7rem; opacity: 0.4; margin: 0.2rem 0 0.6rem; }
+    .profile-bio    { font-size: 0.95rem; opacity: 0.75; margin-bottom: 1.25rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border); }
+    .profile-post   { border-bottom: 1px solid var(--border); padding: 0.75rem 0; font-size: 0.95rem; line-height: 1.5; }
+    .profile-post:first-of-type { border-top: 1px solid var(--border); }
+    .profile-post-time { font-family: var(--mono); font-size: 0.7rem; opacity: 0.35; margin-top: 0.3rem; }
+
+    #status {
+      font-family: var(--mono);
+      font-size: 0.75rem;
+      opacity: 0.5;
+      min-height: 1.4rem;
+      margin-bottom: 0.5rem;
+    }
+    #status.error   { color: #c0392b; opacity: 1; }
+    #status.success { color: #27ae60; opacity: 1; }
+
+    #demo-badge {
+      display: none;
+      font-family: var(--mono);
+      font-size: 0.65rem;
+      opacity: 0.4;
+      margin-left: 0.5rem;
+      vertical-align: middle;
+    }
+
+    .empty { opacity: 0.35; font-size: 0.9rem; padding: 0.75rem 0; }
+  </style>
+</head>
+
+
+<!-- HTML -->
+
+
+<body>
+
+<div class="wrap">
+  <header>
+    <h1 id="site-title">Chainboard<span id="demo-badge">demo</span></h1>
+    <div class="header-actions">
+      <button class="btn" id="wallet-btn" onclick="connectWallet()">connect wallet</button>
+      <button class="theme-btn" onclick="toggleTheme()" id="theme-btn">dark</button>
+    </div>
+  </header>
+
+  <div id="status"></div>
+
+  <section id="post-section">
+    <div class="section-label">new post</div>
+    <div class="form-group">
+      <textarea id="post-content" placeholder="What's on your mind?" maxlength="280" oninput="estimatePostCost()"></textarea>
+    </div>
+    <div class="btn-row">
+      <button class="btn primary" onclick="createPost()">post</button>
+    </div>
+    <div id="gas-estimate"></div>
+  </section>
+
+  <section>
+    <div class="feed-header">
+      <div class="section-label" style="margin:0">Feed</div>
+      <button class="btn ghost" onclick="loadFeed()">refresh</button>
+    </div>
+    <div id="feed"><p class="empty">connect your wallet to load the feed.</p></div>
+  </section>
+</div>
+
+<div class="overlay" id="account-overlay">
+  <div class="modal">
+    <button class="modal-close" id="account-close" onclick="closeAccountModal()" style="display:none">close</button>
+    <div class="modal-title" id="account-modal-title">create account</div>
+
+    <div id="account-view" style="display:none">
+      <div class="profile-name" id="av-name"></div>
+      <div class="profile-wallet" id="av-wallet"></div>
+      <div class="profile-bio" id="av-bio"></div>
+      <div class="btn-row">
+        <button class="btn" onclick="switchToEditMode()">edit account</button>
+        <button class="btn danger" onclick="deleteAccount()">delete account</button>
+      </div>
+    </div>
+
+    <div id="account-form">
+      <div class="form-group">
+        <label>name</label>
+        <input type="text" id="reg-name" placeholder="Your Name" maxlength="50"/>
+      </div>
+      <div class="form-group">
+        <label>bio</label>
+        <input type="text" id="reg-bio" placeholder="A line (or two) about you" />
+      </div>
+      <div class="btn-row">
+        <button class="btn primary" id="reg-btn" onclick="submitAccount()">create account</button>
+        <button class="btn" id="reg-cancel" style="display:none" onclick="switchToViewMode()">cancel</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="profile-overlay">
+  <div class="modal">
+    <button class="modal-close" onclick="closeProfileModal()">close</button>
+    <div class="profile-name" id="prof-name"></div>
+    <div class="profile-wallet" id="prof-wallet"></div>
+    <div class="profile-bio" id="prof-bio"></div>
+    <div class="section-label">posts</div>
+    <div id="prof-posts"><p class="empty">loading...</p></div>
+  </div>
+</div>
+
+
+<!-- LOGIC -->
+
+<script>
+  const CONTRACT_ADDRESS = "0x69461acDf6F78b046242d94F7365bb40644c0e6F";
+  const ABI = [
+    "event AccountCreated(address indexed user, string name)",
+    "event AccountUpdated(address indexed user, string name)",
+    "event PostCreated(uint256 indexed id, address indexed author, string content, uint256 timestamp)",
+    "event PostDeleted(uint256 indexed id)",
+    "function createAccount(string _name, string _bio) external",
+    "function updateAccount(string _newName, string _newBio) external",
+    "function deleteAccount() external",
+    "function getAccount(address _user) external view returns (string name, string bio)",
+    "function createPost(string _content) external returns (uint256)",
+    "function deletePost(uint256 _id) external",
+    "function getPost(uint256 _id) external view returns (string content, address author, uint256 timestamp)",
+    "function postCount() external view returns (uint256)",
+    "function getPostsPaginated(uint256 _limit, uint256 _offset) external view returns (uint256[] ids, string[] contents, address[] authors, uint256[] timestamps)"
+  ];
+
+  let provider, signer, contract, myAddress;
+  let hasAccount = false;
+  let editing = false;
+  let demoMode = false;
+
+  const DEMO_MY_ADDRESS = "0xDEAD000000000000000000000000000000000001";
+  const DEMO_ACCOUNTS = {
+    "0xDEAD000000000000000000000000000000000001": { name: "you",        bio: "this is your demo account."              },
+    "0xDEAD000000000000000000000000000000000002": { name: "alice.eth",  bio: "building in public. coffee addict."      },
+    "0xDEAD000000000000000000000000000000000003": { name: "satoshi_jr", bio: "decentralize everything."                },
+    "0xDEAD000000000000000000000000000000000004": { name: "vitalik_fan",bio: "just here for the vibes."                },
+  };
+  const DEMO_POSTS = [
+    { author: "0xDEAD000000000000000000000000000000000002", content: "just deployed my first contract on mainnet. no bugs. probably.",   timestamp: Date.now()/1000 - 3600,    deleted: false },
+    { author: "0xDEAD000000000000000000000000000000000001", content: "hello chain. this is my first post.",                              timestamp: Date.now()/1000 - 7200,    deleted: false },
+    { author: "0xDEAD000000000000000000000000000000000003", content: "gas fees are the rent of the internet.",                           timestamp: Date.now()/1000 - 86400,   deleted: false },
+    { author: "0xDEAD000000000000000000000000000000000004", content: "if you're not on-chain you're not real.",                          timestamp: Date.now()/1000 - 172800,  deleted: false },
+    { author: "0xDEAD000000000000000000000000000000000002", content: "reminder: not your keys, not your coins.",                         timestamp: Date.now()/1000 - 259200,  deleted: false },
+  ];
+
+  const demoContract = {
+    getAccount: async (addr) => {
+      const a = DEMO_ACCOUNTS[addr];
+      if (!a) throw new Error("Account does not exist");
+      return [a.name, a.bio];
+    },
+    postCount: async () => DEMO_POSTS.length,
+    getPost: async (i) => {
+      const p = DEMO_POSTS[i];
+      if (p.deleted) throw new Error("Deleted");
+      return [p.content, p.author, p.timestamp];
+    },
+    getPostsPaginated: async (limit, offset) => {
+      const ids = [], contents = [], authors = [], timestamps = [];
+      let added = 0;
+      for (let i = DEMO_POSTS.length - 1 - offset; i >= 0 && added < limit; i--) {
+        const p = DEMO_POSTS[i];
+        if (!p.deleted) {
+          ids.push(i);
+          contents.push(p.content);
+          authors.push(p.author);
+          timestamps.push(p.timestamp);
+          added++;
+        }
+      }
+      return [ids, contents, authors, timestamps];
+    },
+    createAccount: async (name, bio) => {
+      DEMO_ACCOUNTS[DEMO_MY_ADDRESS] = { name, bio };
+      return { wait: async () => {} };
+    },
+    updateAccount: async (name, bio) => {
+      DEMO_ACCOUNTS[DEMO_MY_ADDRESS] = { name, bio };
+      return { wait: async () => {} };
+    },
+    deleteAccount: async () => {
+      delete DEMO_ACCOUNTS[DEMO_MY_ADDRESS];
+      return { wait: async () => {} };
+    },
+    createPost: async (content) => {
+      DEMO_POSTS.push({ author: DEMO_MY_ADDRESS, content, timestamp: Date.now()/1000, deleted: false });
+      return { wait: async () => {} };
+    },
+    deletePost: async (i) => {
+      DEMO_POSTS[i].deleted = true;
+      return { wait: async () => {} };
+    },
+    createPost: { estimateGas: async () => 50000n },
+    removeAllListeners: () => {},
+    on: () => {}
+  };
+
+  let titleClicks = 0, titleTimer;
+  document.getElementById("site-title").addEventListener("click", () => {
+    titleClicks++;
+    clearTimeout(titleTimer);
+    titleTimer = setTimeout(() => { titleClicks = 0; }, 600);
+    if (titleClicks >= 3) {
+      titleClicks = 0;
+      activateDemo();
+    }
+  });
+
+  function activateDemo() {
+    demoMode  = true;
+    contract  = demoContract;
+    myAddress = DEMO_MY_ADDRESS;
+    hasAccount = true;
+    document.getElementById("demo-badge").style.display = "inline";
+    const btn = document.getElementById("wallet-btn");
+    btn.textContent = DEMO_ACCOUNTS[DEMO_MY_ADDRESS].name;
+    btn.onclick = () => openAccountModal(true);
+    document.getElementById("post-section").style.display = "block";
+    setStatus("demo mode active.", "success");
+    loadFeed();
+  }
+
+  // ── Wallet & Events ────────────────────────────────────────────────────
+  function setStatus(msg, type = "") {
+    const el = document.getElementById("status");
+    el.textContent = msg;
+    el.className = type;
+  }
+
+  async function connectWallet() {
+    if (!window.ethereum) return setStatus("metamask not found.", "error");
+    try {
+      provider  = new ethers.BrowserProvider(window.ethereum);
+      signer    = await provider.getSigner();
+      contract  = new ethers.Contract(CONTRACT_ADDRESS, ABI, signer);
+      myAddress = await signer.getAddress();
+      setStatus("wallet connected.", "success");
+
+      // Real-time Event Listeners
+      contract.removeAllListeners();
+      contract.on("PostCreated", () => loadFeed());
+      contract.on("PostDeleted", () => loadFeed());
+      contract.on("AccountUpdated", () => loadFeed());
+
+      await checkAccount();
+    } catch(e) { setStatus(e.message, "error"); }
+  }
+
+  async function checkAccount() {
+    try {
+      const [name, bio] = await contract.getAccount(myAddress);
+      hasAccount = true;
+      const btn = document.getElementById("wallet-btn");
+      btn.textContent = name;
+      btn.onclick = () => openAccountModal(true);
+      document.getElementById("post-section").style.display = "block";
+      await loadFeed();
+    } catch(e) { 
+      hasAccount = false;
+      openAccountModal(false);
+    }
+  }
+
+  // ── Account modal ──────────────────────────────────────────────────────
+  function openAccountModal(canClose) {
+    document.getElementById("account-overlay").classList.add("open");
+    document.getElementById("account-close").style.display = canClose ? "block" : "none";
+    if (hasAccount && canClose) showAccountView();
+    else showAccountForm();
+  }
+
+  function closeAccountModal() {
+    document.getElementById("account-overlay").classList.remove("open");
+    editing = false;
+  }
+
+  function showAccountView() {
+    document.getElementById("account-modal-title").textContent = "your account";
+    document.getElementById("account-view").style.display = "block";
+    document.getElementById("account-form").style.display = "none";
+    contract.getAccount(myAddress).then(([name, bio]) => {
+      document.getElementById("av-name").textContent   = name;
+      document.getElementById("av-wallet").textContent = myAddress;
+      document.getElementById("av-bio").textContent    = bio;
+    });
+  }
+
+  function showAccountForm() {
+    document.getElementById("account-modal-title").textContent = editing ? "edit account" : "create account";
+    document.getElementById("account-view").style.display = "none";
+    document.getElementById("account-form").style.display = "block";
+    document.getElementById("reg-btn").textContent = editing ? "save changes" : "create account";
+    document.getElementById("reg-cancel").style.display = editing ? "inline-block" : "none";
+  }
+
+  function switchToEditMode() {
+    editing = true;
+    contract.getAccount(myAddress).then(([name, bio]) => {
+      document.getElementById("reg-name").value = name;
+      document.getElementById("reg-bio").value  = bio;
+      showAccountForm();
+    });
+  }
+
+  function switchToViewMode() {
+    editing = false;
+    showAccountView();
+  }
+
+  async function submitAccount() {
+    if (!contract) return setStatus("connect wallet first.", "error");
+    const name = document.getElementById("reg-name").value.trim();
+    const bio  = document.getElementById("reg-bio").value.trim();
+    if (!name) return setStatus("name is required.", "error");
+    try {
+      setStatus("sending transaction...");
+      const tx = editing
+        ? await contract.updateAccount(name, bio)
+        : await contract.createAccount(name, bio);
+      await tx.wait();
+      setStatus(editing ? "account updated." : "account created.", "success");
+      hasAccount = true;
+      editing = false;
+      const btn = document.getElementById("wallet-btn");
+      btn.textContent = name;
+      btn.onclick = () => openAccountModal(true);
+      document.getElementById("post-section").style.display = "block";
+      document.getElementById("account-close").style.display = "block";
+      closeAccountModal();
+      await loadFeed();
+    } catch(e) { setStatus(e.reason || e.message, "error"); }
+  }
+
+  async function deleteAccount() {
+    if (!confirm("delete your account? your posts will remain on-chain.")) return;
+    try {
+      setStatus("sending transaction...");
+      const tx = await contract.deleteAccount();
+      await tx.wait();
+      hasAccount = false;
+      setStatus("account deleted.", "success");
+      const btn = document.getElementById("wallet-btn");
+      btn.textContent = myAddress.slice(0,6) + "..." + myAddress.slice(-4);
+      btn.onclick = connectWallet;
+      document.getElementById("post-section").style.display = "none";
+      closeAccountModal();
+      openAccountModal(false);
+    } catch(e) { setStatus(e.reason || e.message, "error"); }
+  }
+
+  // ── Profile modal ──────────────────────────────────────────────────────
+  async function openProfileModal(address) {
+    document.getElementById("profile-overlay").classList.add("open");
+    document.getElementById("prof-name").textContent   = "loading...";
+    document.getElementById("prof-wallet").textContent = address;
+    document.getElementById("prof-bio").textContent    = "";
+    document.getElementById("prof-posts").innerHTML    = '<p class="empty">loading...</p>';
+
+    try {
+      const [name, bio] = await contract.getAccount(address);
+      document.getElementById("prof-name").textContent = name;
+      document.getElementById("prof-bio").textContent  = bio;
+    } catch(_) {
+      document.getElementById("prof-name").textContent = address.slice(0,6) + "..." + address.slice(-4);
+      document.getElementById("prof-bio").textContent  = "no account registered.";
+    }
+
+    try {
+      const count = Number(await contract.postCount());
+      const container = document.getElementById("prof-posts");
+      container.innerHTML = "";
+      let found = 0;
+      for (let i = count - 1; i >= 0; i--) {
+        try {
+          const [content, author, timestamp] = await contract.getPost(i);
+          if (author.toLowerCase() !== address.toLowerCase()) continue;
+          found++;
+          const date = new Date(Number(timestamp) * 1000).toLocaleDateString("en-CA", {
+            month: "short", day: "numeric", year: "numeric"
+          });
+          const el = document.createElement("div");
+          el.className = "profile-post";
+          el.innerHTML = `${esc(content)}<div class="profile-post-time">${date}</div>`;
+          container.appendChild(el);
+        } catch(e) { continue; } // Skip deleted posts
+      }
+      if (found === 0) container.innerHTML = '<p class="empty">no posts yet.</p>';
+    } catch(e) {
+      document.getElementById("prof-posts").innerHTML = '<p class="empty">could not load posts.</p>';
+    }
+  }
+
+  function closeProfileModal() {
+    document.getElementById("profile-overlay").classList.remove("open");
+  }
+
+  // ── Posts & Feed ───────────────────────────────────────────────────────
+  async function estimatePostCost() {
+    if (demoMode || !contract || !provider) return;
+    const content = document.getElementById("post-content").value;
+    const el = document.getElementById("gas-estimate");
+    if (!content) { el.textContent = ""; return; }
+    try {
+      const gasLimit = await contract.createPost.estimateGas(content);
+      const feeData = await provider.getFeeData();
+      const costEth = ethers.formatEther(gasLimit * feeData.gasPrice);
+      el.textContent = `Est. Gas Fee: ~${Number(costEth).toFixed(5)} ETH`;
+    } catch(e) { el.textContent = ""; }
+  }
+
+  async function createPost() {
+    if (!contract) return setStatus("connect wallet first.", "error");
+    const content = document.getElementById("post-content").value.trim();
+    if (!content) return setStatus("post cannot be empty.", "error");
+    try {
+      setStatus("sending transaction...");
+      const tx = await contract.createPost(content);
+      await tx.wait();
+      document.getElementById("post-content").value = "";
+      document.getElementById("gas-estimate").textContent = "";
+      setStatus("posted.", "success");
+      // UI updates automatically via event listener
+    } catch(e) { setStatus(e.reason || e.message, "error"); }
+  }
+
+  async function deletePost(id) {
+    if (!confirm("delete this post?")) return;
+    try {
+      setStatus("sending transaction...");
+      const tx = await contract.deletePost(id);
+      await tx.wait();
+      setStatus("post deleted.", "success");
+      // UI updates automatically via event listener
+    } catch(e) { setStatus(e.reason || e.message, "error"); }
+  }
+
+  async function loadFeed() {
+    if (!contract) return;
+    const feed = document.getElementById("feed");
+    feed.innerHTML = "";
+    try {
+      const [ids, contents, authors, timestamps] = await contract.getPostsPaginated(50, 0);
+
+      if (ids.length === 0) { 
+        feed.innerHTML = '<p class="empty">no posts yet.</p>'; 
+        return; 
+      }
+
+      for (let i = 0; i < ids.length; i++) {
+        let authorLabel = authors[i].slice(0,6) + "..." + authors[i].slice(-4);
+        try {
+          const [name] = await contract.getAccount(authors[i]);
+          authorLabel = name;
+        } catch(e) {}
+
+        const date = new Date(Number(timestamps[i]) * 1000).toLocaleDateString("en-CA", {
+          month: "short", day: "numeric", year: "numeric"
+        });
+
+        const isOwn = myAddress && authors[i].toLowerCase() === myAddress.toLowerCase();
+
+        const el = document.createElement("div");
+        el.className = "post";
+        el.innerHTML = `
+          <div class="post-header">
+            <button class="post-author" onclick="openProfileModal('${authors[i]}')">${esc(authorLabel)}</button>
+            <span class="post-time">${date}</span>
+          </div>
+          <div class="post-body">${esc(contents[i])}</div>
+          ${isOwn ? `<div class="post-delete"><button class="btn danger" onclick="deletePost(${ids[i]})">delete</button></div>` : ""}
+        `;
+        feed.appendChild(el);
+      }
+    } catch(e) { 
+      feed.innerHTML = '<p class="empty">could not load feed.</p>'; 
+      console.error(e);
+    }
+  }
+
+  function esc(s) {
+    return String(s)
+      .replace(/&/g,"&amp;").replace(/</g,"&lt;")
+      .replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+  }
+
+  function toggleTheme() {
+    const dark = document.body.classList.toggle("dark");
+    document.getElementById("theme-btn").textContent = dark ? "light" : "dark";
+  }
+
+  document.getElementById("account-overlay").addEventListener("click", function(e) {
+    if (e.target === this && hasAccount) closeAccountModal();
+  });
+  document.getElementById("profile-overlay").addEventListener("click", function(e) {
+    if (e.target === this) closeProfileModal();
+  });
+</script>
+
+</body>
+</html>
