@@ -198,7 +198,7 @@
       border-bottom: 1px solid var(--border);
     }
     #inline-compose .btn-row {
-      justify-content: flex-end;
+      justify-content: flex-start;
       align-items: center;
       margin-top: 0.5rem;
     }
@@ -206,7 +206,6 @@
       font-family: var(--mono);
       font-size: 0.68rem;
       opacity: 0.4;
-      margin-right: auto;
     }
 
     /* ── Posts ────────────────────────────────────────────── */
@@ -214,7 +213,6 @@
       border-bottom: 1px solid var(--border);
       padding: 0.9rem 0;
     }
-    .post:first-child { border-top: 1px solid var(--border); }
     .post-header {
       display: flex;
       justify-content: space-between;
@@ -245,7 +243,6 @@
     .profile-wallet { font-family: var(--mono); font-size: 0.7rem; opacity: 0.4; margin: 0.2rem 0 0.6rem; }
     .profile-bio    { font-size: 0.95rem; opacity: 0.75; margin-bottom: 1.25rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border); }
     .profile-post   { border-bottom: 1px solid var(--border); padding: 0.75rem 0; font-size: 0.95rem; line-height: 1.5; }
-    .profile-post:first-of-type { border-top: 1px solid var(--border); }
     .profile-post-time { font-family: var(--mono); font-size: 0.7rem; opacity: 0.35; margin-top: 0.3rem; }
 
     /* ── Toast (Stackable, bottom center) ─────────────────── */
@@ -414,8 +411,8 @@
     <div id="inline-compose" style="display: none;">
       <textarea id="post-content" placeholder="What's on your mind?" maxlength="280" oninput="this.style.height='auto'; this.style.height=this.scrollHeight+'px'; estimatePostCost()"></textarea>
       <div class="btn-row">
-        <span id="gas-estimate"></span>
         <button class="btn primary" onclick="createPost()">Post</button>
+        <span id="gas-estimate"></span>
       </div>
     </div>
 
@@ -457,8 +454,7 @@
       </div>
       <div class="profile-wallet" id="av-wallet"></div>
       <div class="profile-bio" id="av-bio"></div>
-      
-      <div class="section-label" style="margin-top:1.25rem;">Your Posts</div>
+
       <div id="av-posts"><p class="empty">Loading...</p></div>
     </div>
 
@@ -491,7 +487,6 @@
     </div>
     <div class="profile-wallet" id="prof-wallet"></div>
     <div class="profile-bio" id="prof-bio"></div>
-    <div class="section-label">Posts</div>
     <div id="prof-posts"><p class="empty">Loading...</p></div>
   </div>
 </div>
