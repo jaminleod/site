@@ -347,6 +347,7 @@
   let hasAccount = false;
   let editing = false;
   let demoMode = false;
+  let isFetchingFeed = false;
 
   const DEMO_MY_ADDRESS = "0xDEAD000000000000000000000000000000000001";
   const DEMO_ACCOUNTS = {
@@ -694,15 +695,19 @@
   }
 
   async function loadFeed() {
-    if (!contract) return;
+    if (!contract || isFetchingFeed) return;
+    isFetchingFeed = true;
+
     const feed = document.getElementById("feed");
-    feed.innerHTML = "";
+
     try {
       const [ids, contents, authors, timestamps] = await contract.getPostsPaginated(50, 0);
 
-      if (ids.length === 0) { 
-        feed.innerHTML = '<p class="empty">no posts yet.</p>'; 
-        return; 
+      feed.innerHTML = "";
+
+      if (ids.length === 0) {
+        feed.innerHTML = '<p class="empty">No posts yet.</p>';
+        return;
       }
 
       for (let i = 0; i < ids.length; i++) {
@@ -730,9 +735,11 @@
         `;
         feed.appendChild(el);
       }
-    } catch(e) { 
+    } catch(e) {
       feed.innerHTML = '<p class="empty">could not load feed.</p>'; 
       console.error(e);
+    } finally {
+      isFetchingFeed = false;
     }
   }
 
